@@ -2,14 +2,16 @@ name: Deploy admin to VPS
 
 # Выкатывает прод ТОЛЬКО из master. Проверка остальных веток — в ci.yml.
 #
-# ─── Требуемые секреты (Settings → Secrets and variables → Actions) ─────────
+# ─── Требуемые секреты ─────────────────────────────────────────────────────
 #   SSH_HOST      — IP или домен сервера
 #   SSH_USERNAME  — пользователь SSH
 #   SSH_PASSWORD  — пароль SSH
 #
-# Секреты именно РЕПОЗИТОРИЯ, без `environment:`. Если объявить окружение,
-# не создав его в Settings → Environments, секреты придут пустыми, и отказ
-# на preflight будет выглядеть загадочно.
+# Лежат в Environment `production` (Settings → Environments → production →
+# Environment secrets) — так же, как у бэкенда girl-history. Имя окружения ниже
+# в `environment:` ОБЯЗАНО совпадать с созданным: секреты окружения видны только
+# тому job, который это окружение объявил. Объявить несуществующее окружение —
+# получить пустые секреты и загадочный отказ на preflight.
 #
 # Секрет ENV не нужен: фронт статический, ни БД, ни ключей у него нет.
 #
@@ -35,6 +37,8 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # ИМЯ ОКРУЖЕНИЯ. Без этой строки секреты из Environment не видны вообще.
+    environment: production
 
     steps:
       - name: Checkout

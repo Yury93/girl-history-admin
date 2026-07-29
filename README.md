@@ -125,9 +125,10 @@ src/modules/<фича>/        компоненты вкладок
 
 **Что нужно сделать один раз, иначе выкат не заработает:**
 
-1. Завести секреты репозитория (Settings → Secrets and variables → Actions):
-   `SSH_HOST`, `SSH_USERNAME`, `SSH_PASSWORD`. Именно секреты **репозитория**, без
-   `environment:` — иначе они придут пустыми и preflight откажет.
+1. Завести Environment `production` (Settings → Environments) и положить в него секреты
+   `SSH_HOST`, `SSH_USERNAME`, `SSH_PASSWORD`. Имя окружения обязано совпадать с тем, что
+   объявлено в `deploy-admin.yml`: секреты окружения видны только объявившему его job,
+   и при расхождении они молча придут пустыми. Так же устроен бэкенд `girl-history`.
 2. Поставить nginx-блок из `deploy/nginx/girl-history-admin.conf` в server-блок нужного домена,
    затем `nginx -t && systemctl reload nginx`. Workflow конфиг не разворачивает.
 

@@ -1,6 +1,7 @@
 import { PersonaApi } from '../../api/persona-api.js';
 import { errorText } from '../../api/http.js';
 import { store } from '../../state/app-state.js';
+import { getOwnerKey, setOwnerKey } from '../../state/owner-key.js';
 import { escapeHtml, onClick, query, requireElement, withBusy } from '../../ui/dom.js';
 import { confirmDialog } from '../../ui/confirm.js';
 import { toast } from '../../ui/toast.js';
@@ -23,10 +24,12 @@ import { formatBytes } from '../../ui/format.js';
 export class PersonasComponent {
   private readonly list: HTMLElement;
   private readonly counter: HTMLElement;
+  private readonly keyBox: HTMLElement;
 
   constructor() {
     this.list = requireElement('personasList');
     this.counter = requireElement('profilesCount');
+    this.keyBox = requireElement('ownerKeyBox');
 
     query<HTMLButtonElement>(document, '#btnNewPersona')?.addEventListener('click', () => {
       void this.openCreateForm();
@@ -40,6 +43,7 @@ export class PersonasComponent {
 
     store.subscribe(() => {
       this.render();
+      this.renderOwnerKey();
     });
   }
 
@@ -49,6 +53,70 @@ export class PersonasComponent {
     } catch (error) {
       toast.error(`Не удалось загрузить профили: ${errorText(error)}`);
       this.renderError();
+    } finally {
+      // Ключ сервер выдаёт при первом обращении, поэтому рисуем ПОСЛЕ запроса.
+      this.renderOwnerKey();
+    }
+  }
+
+  /**
+   * Ключ доступа. Показан намеренно: он хранится только в localStorage этого браузера,
+   * и его очистка означает потерю всех профилей — восстановить их иначе нечем
+   * (profile-generation_plan.md:329, п.24). Сохранить его где-то ещё — единственная страховка.
+   */
+  private renderOwnerKey(): void {
+    const key = getOwnerKey();
+    if (key === null) {
+      this.keyBox.innerHTML = `
+        <div>Ключ доступа появится после первого обращения к серверу.</div>
+        <button class="btn-ghost btn-sm" id="btnRestoreKey" style="padding-left:0;">
+          Ввести существующий
+        </button>`;
+    } else {
+      this.keyBox.innerHTML = `
+        <div>Ключ доступа — сохраните его, иначе потеряете профили при очистке браузера:</div>
+        <div class="key-value">${escapeHtml(key)}</div>
+        <div class="row" style="gap:6px;">
+          <button class="btn-ghost btn-sm" id="btnCopyKey" style="padding-left:0;">Копировать</button>
+          <button class="btn-ghost btn-sm" id="btnRestoreKey">Ввести другой</button>
+        </div>`;
+    }
+
+    query<HTMLButtonElement>(this.keyBox, '#btnCopyKey')?.addEventListener('click', () => {
+      if (key === null) return;
+      void navigator.clipboard.writeText(key).then(
+        () => {
+          toast.success('Ключ доступа скопирован. Сохраните его вне браузера.');
+        },
+        () => {
+          toast.warn('Не удалось скопировать — выделите строку вручную.');
+        }
+      );
+    });
+
+    query<HTMLButtonElement>(this.keyBox, '#btnRestoreKey')?.addEventListener('click', () => {
+      void this.restoreKey();
+    });
+  }
+
+  /** Перенос доступа с другой машины: вводим сохранённый ключ и перечитываем список. */
+  private async restoreKey(): Promise<void> {
+    const entered = window.prompt('Вставьте ранее сохранённый ключ доступа:');
+    if (entered === null) return;
+
+    if (!setOwnerKey(entered)) {
+      toast.error('Ключ слишком короткий — сервер такой не примет (нужно от 16 символов).');
+      return;
+    }
+
+    try {
+      store.clearSelection();
+      await store.loadList();
+      toast.success('Ключ применён, список профилей перечитан.');
+    } catch (error) {
+      toast.error(errorText(error));
+    } finally {
+      this.renderOwnerKey();
     }
   }
 
