@@ -3,6 +3,7 @@ import { PersonasComponent } from './modules/personas/personas-component.js';
 import { PersonaComponent } from './modules/persona/persona-component.js';
 import { PersonaImagesComponent } from './modules/persona/persona-images-component.js';
 import { ChroniclesComponent, OPEN_TAB_EVENT } from './modules/chronicles/chronicles-component.js';
+import { DaysFeedComponent } from './modules/days/days-feed-component.js';
 import type { TabComponent } from './types/tab.js';
 
 /**
@@ -40,8 +41,7 @@ class App {
       persona: () => new PersonaComponent('tab-persona'),
       images: () => new PersonaImagesComponent('tab-images'),
       chronicles: () => new ChroniclesComponent('tab-chronicles'),
-      // Фаза 4: заменяется на реальный компонент, оболочку трогать не придётся.
-      days: () => placeholder('tab-days', 'Лента', 'дни хроники, правка и выборочная регенерация'),
+      days: () => new DaysFeedComponent('tab-days'),
     };
 
     this.setupTabs();
@@ -124,24 +124,6 @@ class App {
     }
     await component.activate();
   }
-}
-
-/** Временная заглушка вкладки. Убирается вместе с приходом настоящего компонента. */
-function placeholder(containerId: string, title: string, what: string): TabComponent {
-  return {
-    activate(): Promise<void> {
-      const el = document.getElementById(containerId);
-      if (el !== null) {
-        el.innerHTML = `
-          <div class="empty">
-            <div class="icon">🚧</div>
-            <div class="title">${title}</div>
-            <div class="desc">Здесь будет ${what}. Компонент ещё не реализован.</div>
-          </div>`;
-      }
-      return Promise.resolve();
-    },
-  };
 }
 
 new App();
