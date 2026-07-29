@@ -1,5 +1,11 @@
+import { store } from './state/app-state.js';
+import { PersonasComponent } from './modules/personas/personas-component.js';
+import { PersonaComponent } from './modules/persona/persona-component.js';
+import { PersonaImagesComponent } from './modules/persona/persona-images-component.js';
+import type { TabComponent } from './types/tab.js';
+
 /**
- * Оболочка приложения: сайдбар с профилями + вкладки внутри выбранного профиля.
+ * Оболочка: сайдбар с профилями + вкладки внутри выбранного профиля.
  *
  * Схема взята из ai-prompt-admin (сайдбар слева, вкладки справа), но с двумя правками:
  *  - вместо цепочки else-if по имени вкладки — таблица фабрик, иначе она растёт линейно
@@ -11,13 +17,8 @@
 const TAB_NAMES = ['persona', 'images', 'chronicles', 'days'] as const;
 export type TabName = (typeof TAB_NAMES)[number];
 
-/** Контракт вкладки. Компоненты создаются лениво и переиспользуются. */
-export interface TabComponent {
-  /** Открытие вкладки: загрузка и отрисовка данных. */
-  activate(): Promise<void>;
-  /** Уход с вкладки: остановить таймеры и подписки. Необязателен. */
-  deactivate?(): void;
-}
+/** Вкладки, которым нужен выбранный профиль: без него они бессмысленны. */
+const NEEDS_PERSONA: readonly TabName[] = ['images', 'chronicles', 'days'];
 
 const LAST_TAB_KEY = 'gh-admin:last-tab';
 
@@ -28,20 +29,34 @@ function isTabName(value: string): value is TabName {
 class App {
   private readonly components = new Map<TabName, TabComponent>();
   private readonly factories: Record<TabName, () => TabComponent>;
+  private readonly personas: PersonasComponent;
   private activeTab: TabName | null = null;
 
   constructor() {
-    // Пока фазы 2-4 не написаны, вкладки показывают честную заглушку.
-    // Каждая фаза заменяет свою строку на реальный компонент — оболочку не трогая.
+    this.personas = new PersonasComponent();
+
     this.factories = {
-      persona: () => placeholder('tab-persona', 'Профиль', 'правка промпта, внешности и аватара'),
-      images: () => placeholder('tab-images', 'Референсы', 'фото, влияющие на генерацию'),
-      chronicles: () => placeholder('tab-chronicles', 'Хроники', 'запуск генерации и прогресс'),
-      days: () => placeholder('tab-days', 'Лента', 'дни хроники, правка и регенерация'),
+      persona: () => new PersonaComponent('tab-persona'),
+      images: () => new PersonaImagesComponent('tab-images'),
+      // Фазы 3-4: заменяются на реальные компоненты, оболочку трогать не придётся.
+      chronicles: () =>
+        placeholder('tab-chronicles', 'Хроники', 'запуск генерации, прогресс и публичные ссылки'),
+      days: () => placeholder('tab-days', 'Лента', 'дни хроники, правка и выборочная регенерация'),
     };
 
     this.setupTabs();
-    void this.activateTab(this.restoreTab());
+    store.subscribe(() => {
+      this.syncTabAvailability();
+    });
+    this.syncTabAvailability();
+
+    void this.start();
+  }
+
+  private async start(): Promise<void> {
+    // Сначала вкладка — чтобы пустое состояние отрисовалось сразу, а не после запроса.
+    await this.activateTab(this.restoreTab());
+    await this.personas.activate();
   }
 
   private restoreTab(): TabName {
@@ -56,6 +71,24 @@ class App {
         if (name !== undefined && isTabName(name)) void this.activateTab(name);
       });
     });
+  }
+
+  /**
+   * Без выбранного профиля вкладки «Референсы», «Хроники» и «Лента» гасим: они всё равно
+   * показали бы только приглашение выбрать профиль. Если гасим ту, что сейчас открыта, —
+   * возвращаемся на «Профиль».
+   */
+  private syncTabAvailability(): void {
+    const hasPersona = store.persona !== null;
+    document.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach((btn) => {
+      const name = btn.dataset.tab;
+      if (name === undefined || !isTabName(name)) return;
+      btn.disabled = !hasPersona && NEEDS_PERSONA.includes(name);
+    });
+
+    if (!hasPersona && this.activeTab !== null && NEEDS_PERSONA.includes(this.activeTab)) {
+      void this.activateTab('persona');
+    }
   }
 
   private async activateTab(name: TabName): Promise<void> {
