@@ -2,6 +2,7 @@ import { store } from './state/app-state.js';
 import { PersonasComponent } from './modules/personas/personas-component.js';
 import { PersonaComponent } from './modules/persona/persona-component.js';
 import { PersonaImagesComponent } from './modules/persona/persona-images-component.js';
+import { ChroniclesComponent, OPEN_TAB_EVENT } from './modules/chronicles/chronicles-component.js';
 import type { TabComponent } from './types/tab.js';
 
 /**
@@ -38,13 +39,20 @@ class App {
     this.factories = {
       persona: () => new PersonaComponent('tab-persona'),
       images: () => new PersonaImagesComponent('tab-images'),
-      // Фазы 3-4: заменяются на реальные компоненты, оболочку трогать не придётся.
-      chronicles: () =>
-        placeholder('tab-chronicles', 'Хроники', 'запуск генерации, прогресс и публичные ссылки'),
+      chronicles: () => new ChroniclesComponent('tab-chronicles'),
+      // Фаза 4: заменяется на реальный компонент, оболочку трогать не придётся.
       days: () => placeholder('tab-days', 'Лента', 'дни хроники, правка и выборочная регенерация'),
     };
 
     this.setupTabs();
+
+    // Компоненты просят открыть другую вкладку событием, а не ссылкой на оболочку:
+    // иначе «Хроники» пришлось бы знать про App, а App — прокидывать себя в конструктор.
+    document.addEventListener(OPEN_TAB_EVENT, (event) => {
+      const name = (event as CustomEvent<string>).detail;
+      if (isTabName(name)) void this.activateTab(name);
+    });
+
     store.subscribe(() => {
       this.syncTabAvailability();
     });

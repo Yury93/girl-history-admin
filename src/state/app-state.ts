@@ -1,4 +1,5 @@
 import { PersonaApi } from '../api/persona-api.js';
+import type { ChronicleSummary } from '../types/chronicle.js';
 import type { PersonaListItem, PersonaOwner } from '../types/persona.js';
 
 /**
@@ -21,6 +22,8 @@ class AppStore {
   private personas: PersonaListItem[] = [];
   private current: PersonaOwner | null = null;
   private listLoaded = false;
+  /** Хроника, открытая на вкладке «Лента». Живёт до смены профиля. */
+  private chronicleToken: string | null = null;
 
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
@@ -48,6 +51,33 @@ class AppStore {
     return this.current?.ownerToken ?? this.remembered();
   }
 
+  get selectedChronicleToken(): string | null {
+    return this.chronicleToken;
+  }
+
+  get selectedChronicle(): ChronicleSummary | null {
+    const token = this.chronicleToken;
+    if (token === null) return null;
+    return this.current?.chronicles.find((c) => c.publicToken === token) ?? null;
+  }
+
+  selectChronicle(publicToken: string | null): void {
+    if (this.chronicleToken === publicToken) return;
+    this.chronicleToken = publicToken;
+    this.emit();
+  }
+
+  /**
+   * Идёт ли генерация по ЛЮБОЙ хронике профиля. Бэкенд держит single-flight на уровне
+   * профиля (chronicle-service.ts:55-58): пока одна хроника генерится, запуск второй —
+   * даже другой — вернёт 409. Значит и гасить кнопки надо у всех сразу.
+   */
+  get hasActiveGeneration(): boolean {
+    return (this.current?.chronicles ?? []).some(
+      (c) => c.status === 'pending' || c.status === 'running'
+    );
+  }
+
   private remembered(): string | null {
     return localStorage.getItem(SELECTED_KEY);
   }
@@ -70,6 +100,8 @@ class AppStore {
   async select(ownerToken: string): Promise<void> {
     if (this.current?.ownerToken === ownerToken) return;
     localStorage.setItem(SELECTED_KEY, ownerToken);
+    // Хроника принадлежала прежнему профилю — её выбор больше не имеет смысла.
+    this.chronicleToken = null;
     this.current = await PersonaApi.get(ownerToken);
     this.emit();
   }
@@ -91,6 +123,7 @@ class AppStore {
 
   clearSelection(): void {
     this.current = null;
+    this.chronicleToken = null;
     localStorage.removeItem(SELECTED_KEY);
     this.emit();
   }
