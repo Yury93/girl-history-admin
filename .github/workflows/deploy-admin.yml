@@ -1,0 +1,140 @@
+name: Deploy admin to VPS
+
+# Выкатывает прод ТОЛЬКО из master. Проверка остальных веток — в ci.yml.
+#
+# ─── Требуемые секреты (Settings → Secrets and variables → Actions) ─────────
+#   SSH_HOST      — IP или домен сервера
+#   SSH_USERNAME  — пользователь SSH
+#   SSH_PASSWORD  — пароль SSH
+#
+# Секреты именно РЕПОЗИТОРИЯ, без `environment:`. Если объявить окружение,
+# не создав его в Settings → Environments, секреты придут пустыми, и отказ
+# на preflight будет выглядеть загадочно.
+#
+# Секрет ENV не нужен: фронт статический, ни БД, ни ключей у него нет.
+#
+# ─── Что происходит на сервере ─────────────────────────────────────────────
+# Файлы кладутся ТОЛЬКО в /var/www/girl-history-admin.
+# В /var/www/admin живёт ЧУЖАЯ админка соседнего проекта, которую nginx отдаёт
+# с корня домена. Не трогать.
+#
+# nginx-конфиг (deploy/nginx/girl-history-admin.conf) ставится на сервер
+# ОДИН РАЗ руками — workflow его не разворачивает.
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+# Два пуша подряд не должны распаковываться внахлёст.
+concurrency:
+  group: deploy-girl-history-admin
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Дешевле упасть здесь, чем на середине выката.
+      - name: Preflight — проверка секретов
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          fail=0
+          for s in SSH_HOST SSH_USERNAME SSH_PASSWORD; do
+            if [ -z "${!s}" ]; then echo "::error::Секрет $s не задан"; fail=1; fi
+          done
+          [ "$fail" -eq 0 ] || exit 1
+          echo "Секреты на месте."
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        env:
+          # На проде API виден по этому пути, на том же origin, что и фронт.
+          # ВНИМАНИЕ: всё с префиксом VITE_ попадает в бандл и видно в исходниках
+          # страницы — сюда можно класть только адреса, никаких секретов.
+          VITE_API_BASE: /girl-history
+        run: pnpm run build
+
+      # Страховка от самой дорогой ошибки этого проекта: сборка без правильного
+      # base собирается УСПЕШНО, но на подпути даёт белый экран — ассеты уходят
+      # на корень домена, где стоит чужая админка, и возвращают HTML вместо JS.
+      - name: Проверка префикса ассетов
+        run: |
+          if ! grep -q '/girl-history-admin/assets/' dist/index.html; then
+            echo "::error::В dist/index.html нет префикса /girl-history-admin/ — проверьте base в vite.config.ts"
+            exit 1
+          fi
+          echo "Префикс ассетов на месте."
+
+      - name: Упаковка
+        run: |
+          tar -czf girl-history-admin.tar.gz -C dist .
+          ls -lh girl-history-admin.tar.gz
+
+      - name: Загрузка архива
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          source: 'girl-history-admin.tar.gz'
+          target: '/tmp/'
+
+      - name: Выкат на сервере
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          script: |
+            set -e
+            APP_DIR=/var/www/girl-history-admin
+            STAGE="${APP_DIR}.new"
+            ARCHIVE=/tmp/girl-history-admin.tar.gz
+
+            test -s "$ARCHIVE"
+
+            # Распаковываем РЯДОМ, а не поверх рабочей папки: битый архив не должен
+            # оставить прод в половинчатом состоянии. Подмена — быстрым mv в конце.
+            rm -rf "$STAGE"
+            mkdir -p "$STAGE"
+            tar -xzf "$ARCHIVE" -C "$STAGE"
+            rm -f "$ARCHIVE"
+
+            # Без index.html SPA-fallback ведёт в никуда — значит архив собран не тем.
+            test -f "$STAGE/index.html"
+
+            chown -R www-data:www-data "$STAGE"
+
+            rm -rf "${APP_DIR}.prev"
+            if [ -d "$APP_DIR" ]; then mv "$APP_DIR" "${APP_DIR}.prev"; fi
+            mv "$STAGE" "$APP_DIR"
+
+            # Конфиг ставится руками один раз; здесь только проверяем и перечитываем.
+            nginx -t
+            systemctl reload nginx
+
+            rm -rf "${APP_DIR}.prev"
+            echo "Выкат завершён: $APP_DIR"

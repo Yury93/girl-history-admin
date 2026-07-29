@@ -115,12 +115,32 @@ src/modules/<фича>/        компоненты вкладок
 ## Деплой
 
 Статика в `/var/www/girl-history-admin`, отдаётся nginx по пути `/girl-history-admin/`
-на том же origin, что и API. Подробности, конфиг nginx и список подводных камней —
-`frontend_plan.md` §6.
+на том же origin, что и API.
+
+- `.github/workflows/ci.yml` — на PR и не-master: `install --frozen-lockfile` + `build`
+  (внутри `tsc --noEmit`); линт и формат advisory.
+- `.github/workflows/deploy-admin.yml` — на push в `master` и вручную. Preflight секретов,
+  сборка с `VITE_API_BASE=/girl-history`, проверка префикса ассетов, SCP, атомарная подмена
+  папки на сервере, `nginx -t` и reload.
+
+**Что нужно сделать один раз, иначе выкат не заработает:**
+
+1. Завести секреты репозитория (Settings → Secrets and variables → Actions):
+   `SSH_HOST`, `SSH_USERNAME`, `SSH_PASSWORD`. Именно секреты **репозитория**, без
+   `environment:` — иначе они придут пустыми и preflight откажет.
+2. Поставить nginx-блок из `deploy/nginx/girl-history-admin.conf` в server-блок нужного домена,
+   затем `nginx -t && systemctl reload nginx`. Workflow конфиг не разворачивает.
+
+Проверить после первого выката:
+
+```
+curl -I https://<домен>/girl-history-admin/   # 200, страница админки
+curl -I https://<домен>/                      # по-прежнему чужая админка Lisa AI
+```
 
 **`/var/www/admin` — чужая папка**: там рабочая админка соседнего проекта, которую nginx отдаёт
 с корня домена. Её workflow делает `rm -rf /var/www/admin/*`; копировать его, не сменив путь,
-значит снести чужой прод.
+значит снести чужой прод. Наш выкат туда не ходит вовсе.
 
 ## Текущее состояние
 

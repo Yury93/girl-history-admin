@@ -1,0 +1,49 @@
+name: CI
+
+# Проверка на PR и в НЕ-master ветках. НИЧЕГО не деплоит.
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - master
+  workflow_dispatch:
+
+# Новый пуш в ту же ветку отменяет предыдущий прогон.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: typecheck + build (lint/format advisory)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      # Рассинхрон lock-файла ловим ДО master, а не на деплое.
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      # Главный гейт: ровно то, что делает деплой. `build` внутри себя гоняет tsc --noEmit,
+      # потому что сама сборка Vite типы не проверяет.
+      - name: Build
+        run: pnpm run build
+
+      - name: Lint (advisory)
+        run: pnpm run lint
+        continue-on-error: true
+
+      - name: Format check (advisory)
+        run: pnpm run format:check
+        continue-on-error: true
