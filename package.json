@@ -1,0 +1,39 @@
+{
+  "name": "girl-history-admin",
+  "version": "1.0.0",
+  "description": "Админка к API girl-history: профили персонажей, референсы, хроники, лента дней",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --no-error-on-unmatched-pattern",
+    "lint:fix": "eslint . --fix --no-error-on-unmatched-pattern",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keywords": [
+    "vite",
+    "typescript",
+    "admin"
+  ],
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.15.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.19.17",
+    "@typescript-eslint/eslint-plugin": "^8.58.1",
+    "@typescript-eslint/parser": "^8.58.1",
+    "eslint": "^10.2.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "prettier": "^3.8.1",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.58.1",
+    "vite": "^8.0.8"
+  }
+}

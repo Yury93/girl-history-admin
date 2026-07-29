@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+
+    /* Строгость. `any` запрещён отдельным правилом ESLint — здесь общая база. */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+
+    /* Сборкой занимается Vite, tsc только проверяет типы. */
+    "noEmit": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+
+    /* vite/client — типы для import.meta.env; node — для vite.config.ts. */
+    "types": ["vite/client", "node"]
+  },
+  "include": ["src/**/*.ts", "vite.config.ts"]
+}

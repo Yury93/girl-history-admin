@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Продукт генерирует вымышленные биографии. Публичному индексу здесь не место
+         (риск §7 плана бэкенда: маркировка вымысла + noindex). -->
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Хроники — админка</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <aside id="sidebar">
+      <div class="sidebar-head">
+        <h2 class="sidebar-title">
+          Профили
+          <span class="count" id="profilesCount"></span>
+        </h2>
+        <button class="btn-primary" style="width: 100%" id="btnNewPersona">+ Новый профиль</button>
+      </div>
+      <div class="sidebar-list" id="personasList"></div>
+    </aside>
+
+    <main id="main">
+      <nav class="tab-buttons" id="tabButtons">
+        <button class="tab-btn active" data-tab="persona">Профиль</button>
+        <button class="tab-btn" data-tab="images">Референсы</button>
+        <button class="tab-btn" data-tab="chronicles">Хроники</button>
+        <button class="tab-btn" data-tab="days">Лента</button>
+      </nav>
+
+      <section id="tab-persona" class="tab-content active"></section>
+      <section id="tab-images" class="tab-content"></section>
+      <section id="tab-chronicles" class="tab-content"></section>
+      <section id="tab-days" class="tab-content"></section>
+    </main>
+
+    <div id="toasts"></div>
+    <div id="modal-root"></div>
+
+    <script type="module" src="/src/app.ts"></script>
+  </body>
+</html>

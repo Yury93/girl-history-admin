@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+*.log
+.env
+
+# Генерируется pnpm — форматировать бессмысленно, менялся бы при каждой установке.
+pnpm-lock.yaml

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Любые .env с локальными настройками. Исключение — шаблон без значений.
+.env
+.env.*
+!.env.example
+
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.log
