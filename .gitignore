@@ -13,3 +13,7 @@ dist-ssr/
 .idea/
 .DS_Store
 *.log
+
+# Черновики задач скилов Claude Code (brief/research/plan одной задачи).
+# Долгоживущие документы лежат в корне — см. раздел «Скилы Claude Code» в CLAUDE.md.
+.claude/tasks/
