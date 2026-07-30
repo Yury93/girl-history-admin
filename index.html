@@ -3,39 +3,62 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Продукт генерирует вымышленные биографии. Публичному индексу здесь не место
-         (риск §7 плана бэкенда: маркировка вымысла + noindex). -->
+    <!-- Продукт генерирует вымышленную жизнь вымышленного персонажа.
+         Публичному индексу здесь не место. -->
     <meta name="robots" content="noindex, nofollow" />
-    <title>Хроники — админка</title>
+    <title>Nova — движок контента</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <aside id="sidebar">
-      <div class="sidebar-head">
-        <h2 class="sidebar-title">
-          Профили
-          <span class="count" id="profilesCount"></span>
-        </h2>
-        <button class="btn-primary" style="width: 100%" id="btnNewPersona">+ Новый профиль</button>
+    <header id="topbar">
+      <div class="brand">
+        <b>Nova</b>
+        <span class="brand-sub">движок генерации контента</span>
       </div>
-      <div class="sidebar-list" id="personasList"></div>
-      <!-- ownerKey живёт ТОЛЬКО в localStorage: очистил хранилище — потерял все профили.
-           Поэтому он показан и его можно скопировать или ввести заново. -->
-      <div class="sidebar-foot" id="ownerKeyBox"></div>
-    </aside>
+      <!-- Ключ сервер НЕ выдаёт: при заданном ADMIN_KEY он просто отвечает 401,
+           пока клиент не пришлёт верный. Поэтому поле всегда на виду. -->
+      <div class="admin-key">
+        <input type="password" id="adminKey" placeholder="x-admin-key" autocomplete="off" />
+        <button class="btn-secondary btn-sm" id="saveAdminKey">Сохранить ключ</button>
+      </div>
+    </header>
+
+    <nav id="tabs">
+      <div class="tab-group">
+        <span class="tab-group-title">Справочники</span>
+        <button class="tab-btn" data-tab="character">Персонаж</button>
+        <button class="tab-btn" data-tab="modes">Режимы</button>
+        <button class="tab-btn" data-tab="week-grid">Сетка недели</button>
+        <button class="tab-btn" data-tab="pools">Пулы</button>
+        <button class="tab-btn" data-tab="deviations">Отклонения</button>
+        <button class="tab-btn" data-tab="locations">Локации</button>
+        <button class="tab-btn" data-tab="references">Референсы</button>
+        <button class="tab-btn" data-tab="arc">Арка</button>
+      </div>
+      <div class="tab-group">
+        <span class="tab-group-title">Работа</span>
+        <button class="tab-btn active" data-tab="generation">Генерация</button>
+        <button class="tab-btn" data-tab="feed">Лента</button>
+        <button class="tab-btn" data-tab="registry">Реестр</button>
+        <button class="tab-btn" data-tab="trends">Тренды</button>
+        <button class="tab-btn" data-tab="settings">Настройки</button>
+      </div>
+    </nav>
 
     <main id="main">
-      <nav class="tab-buttons" id="tabButtons">
-        <button class="tab-btn active" data-tab="persona">Профиль</button>
-        <button class="tab-btn" data-tab="images">Референсы</button>
-        <button class="tab-btn" data-tab="chronicles">Хроники</button>
-        <button class="tab-btn" data-tab="days">Лента</button>
-      </nav>
-
-      <section id="tab-persona" class="tab-content active"></section>
-      <section id="tab-images" class="tab-content"></section>
-      <section id="tab-chronicles" class="tab-content"></section>
-      <section id="tab-days" class="tab-content"></section>
+      <section id="tab-character" class="tab-content"></section>
+      <section id="tab-modes" class="tab-content"></section>
+      <section id="tab-week-grid" class="tab-content"></section>
+      <section id="tab-pools" class="tab-content"></section>
+      <section id="tab-deviations" class="tab-content"></section>
+      <section id="tab-locations" class="tab-content"></section>
+      <section id="tab-references" class="tab-content"></section>
+      <section id="tab-arc" class="tab-content"></section>
+      <section id="tab-generation" class="tab-content active"></section>
+      <section id="tab-feed" class="tab-content"></section>
+      <section id="tab-registry" class="tab-content"></section>
+      <section id="tab-trends" class="tab-content"></section>
+      <section id="tab-settings" class="tab-content"></section>
     </main>
 
     <div id="toasts"></div>
