@@ -11,7 +11,12 @@ import { FeedComponent } from './modules/feed/feed-component.js';
 import { RegistryComponent } from './modules/registry/registry-component.js';
 import { TrendsComponent } from './modules/trends/trends-component.js';
 import { SettingsComponent } from './modules/settings/settings-component.js';
-import { getAdminKey, setAdminKey } from './state/admin-key.js';
+import { getAdminKey, hasAdminKey, setAdminKey } from './state/admin-key.js';
+import { PROFILES_CHANGED_EVENT, getProfileId, setProfileId } from './state/profile.js';
+import { escapeHtml } from './ui/dom.js';
+import { CharactersApi } from './api/engine-api.js';
+import { errorText } from './api/http.js';
+import { promptDialog } from './ui/prompt-dialog.js';
 import { toast } from './ui/toast.js';
 import { openGuide } from './ui/guide.js';
 import { hideTooltip, initTooltips } from './ui/tooltip.js';
@@ -69,9 +74,110 @@ class App {
     this.setupAdminKey();
     this.setupHelp();
     this.setupTutorial();
+    this.setupProfiles();
     initTooltips();
     initTutorial();
+    this.updateHelpButtons();
     void this.activateTab(this.restoreTab());
+  }
+
+  /** Пересоздать активный экран — данные надо перечитать (смена ключа или профиля). */
+  private reloadActiveScreen(): void {
+    const active = this.activeTab;
+    if (active === null) return;
+    this.components.delete(active);
+    this.activeTab = null;
+    void this.activateTab(active);
+  }
+
+  // ─── Профили персонажей (мультипрофиль) ────────────────────────────────────
+
+  /**
+   * Селектор в шапке. Список приходит с бэкенда; ошибка (нет ключа, старый бэкенд)
+   * просто прячет селектор — админка продолжает работать с профилем по умолчанию.
+   */
+  private setupProfiles(): void {
+    const picker = document.getElementById('profilePicker');
+    const select = document.getElementById('profileSelect');
+    const createBtn = document.getElementById('profileCreate');
+    if (picker === null || !(select instanceof HTMLSelectElement) || createBtn === null) return;
+
+    select.addEventListener('change', () => {
+      const id = Number(select.value);
+      setProfileId(Number.isInteger(id) && id > 0 ? id : null);
+      this.reloadActiveScreen();
+    });
+
+    createBtn.addEventListener('click', () => {
+      void (async () => {
+        const name = await promptDialog({
+          title: 'Новый профиль персонажа',
+          message:
+            'Профиль получит копию личности текущего дефолтного профиля и полный набор ' +
+            'справочников из сида. Генерация, лента и реестр у него будут свои.',
+          placeholder: 'Имя, например «Луна»',
+          confirmLabel: 'Создать профиль',
+        });
+        if (name === null) return;
+        try {
+          const created = await CharactersApi.create(name);
+          toast.success(`Профиль «${created.name}» создан и наполнен справочниками`);
+          setProfileId(created.id);
+          await this.loadProfiles();
+          this.reloadActiveScreen();
+        } catch (e: unknown) {
+          toast.error(errorText(e));
+        }
+      })();
+    });
+
+    document.addEventListener(PROFILES_CHANGED_EVENT, () => {
+      void this.loadProfiles().then(() => {
+        // Выбранный профиль мог быть удалён — loadProfiles уже сбросил выбор.
+        this.reloadActiveScreen();
+      });
+    });
+
+    void this.loadProfiles();
+  }
+
+  private async loadProfiles(): Promise<void> {
+    const picker = document.getElementById('profilePicker');
+    const select = document.getElementById('profileSelect');
+    if (picker === null || !(select instanceof HTMLSelectElement)) return;
+
+    try {
+      const profiles = await CharactersApi.list();
+      const selected = getProfileId();
+      const known = profiles.some((p) => p.id === selected);
+      if (!known) setProfileId(null);
+
+      const current = getProfileId() ?? profiles[0]?.id ?? null;
+      select.innerHTML = profiles
+        .map(
+          (p) =>
+            `<option value="${p.id}" ${p.id === current ? 'selected' : ''}>${escapeHtml(p.name)}</option>`
+        )
+        .join('');
+      picker.hidden = profiles.length === 0;
+    } catch {
+      // Ключ не введён или бэкенд без мультипрофиля — работаем без селектора.
+      picker.hidden = true;
+    }
+  }
+
+  /**
+   * «Обучение» и «Как это работает?» видны только с введённым ключом (требование
+   * пользователя 2026-07-31). Это UX, а не защита: данные и так закрыты сервером.
+   * Убрали ключ при идущем курсе — курс прерывается (прогресс сохраняется).
+   */
+  private updateHelpButtons(): void {
+    const visible = hasAdminKey();
+    for (const id of ['tutorialBtn', 'howItWorks']) {
+      const el = document.getElementById(id);
+      if (el !== null) el.hidden = !visible;
+    }
+    if (!visible && tutorialStatus().active) toggleTutorial();
   }
 
   /** Кнопка «Обучение»: текст отражает состояние курса, событие шлёт движок. */
@@ -135,13 +241,11 @@ class App {
     button.addEventListener('click', () => {
       setAdminKey(input.value);
       toast.success(input.value.trim() === '' ? 'Ключ убран' : 'Ключ сохранён');
-      const active = this.activeTab;
-      if (active !== null) {
-        // Переоткрываем текущий экран: с новым ключом данные надо перечитать.
-        this.components.delete(active);
-        this.activeTab = null;
-        void this.activateTab(active);
-      }
+      this.updateHelpButtons();
+      // С новым ключом список профилей мог стать доступен (или наоборот).
+      void this.loadProfiles();
+      // Переоткрываем текущий экран: с новым ключом данные надо перечитать.
+      this.reloadActiveScreen();
     });
   }
 

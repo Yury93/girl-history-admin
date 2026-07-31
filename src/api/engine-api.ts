@@ -46,6 +46,26 @@ export const SeedApi = {
   },
 };
 
+// ─── Профили персонажей (мультипрофиль) ───────────────────────────────────────
+
+export const CharactersApi = {
+  async list(): Promise<import('../types/engine.js').CharacterBrief[]> {
+    const { data } =
+      await client.get<import('../types/engine.js').CharacterBrief[]>('/engine/characters');
+    return data;
+  },
+  async create(name: string): Promise<import('../types/engine.js').CharacterBrief> {
+    const { data } = await client.post<import('../types/engine.js').CharacterBrief>(
+      '/engine/characters',
+      { name }
+    );
+    return data;
+  },
+  async remove(id: number): Promise<void> {
+    await client.delete(`/engine/characters/${id}`);
+  },
+};
+
 // ─── Персонаж ─────────────────────────────────────────────────────────────────
 
 export const CharacterApi = {

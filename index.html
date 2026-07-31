@@ -16,6 +16,12 @@
         <span class="brand-sub">движок генерации контента</span>
       </div>
       <div class="topbar-right">
+        <!-- Мультипрофиль: выбранный профиль уходит заголовком x-character-id.
+             Пустой выбор = профиль по умолчанию (как раньше). -->
+        <div class="profile-picker" id="profilePicker" hidden>
+          <select id="profileSelect" title="Профиль персонажа"></select>
+          <button class="btn-secondary btn-sm" id="profileCreate" title="Новый профиль">+</button>
+        </div>
         <button class="btn-secondary btn-sm" id="tutorialBtn">Обучение</button>
         <button class="btn-secondary btn-sm" id="howItWorks">Как это работает?</button>
         <!-- Ключ сервер НЕ выдаёт: при заданном ADMIN_KEY он просто отвечает 401,

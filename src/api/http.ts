@@ -1,5 +1,6 @@
 import axios, { AxiosError, type AxiosInstance } from 'axios';
 import { ADMIN_KEY_HEADER, getAdminKey } from '../state/admin-key.js';
+import { CHARACTER_ID_HEADER, getProfileId } from '../state/profile.js';
 
 /**
  * Единственная точка выхода в сеть. Компоненты сюда не заглядывают — они работают через
@@ -33,6 +34,9 @@ const client: AxiosInstance = axios.create({ baseURL: API_BASE });
 client.interceptors.request.use((config) => {
   const key = getAdminKey();
   if (key !== null) config.headers.set(ADMIN_KEY_HEADER, key);
+  // Профиль персонажа. Не выбран — заголовок не шлём, бэкенд возьмёт профиль по умолчанию.
+  const profileId = getProfileId();
+  if (profileId !== null) config.headers.set(CHARACTER_ID_HEADER, String(profileId));
   return config;
 });
 

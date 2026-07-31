@@ -1229,6 +1229,11 @@ tr.row-warn td {
   align-items: center;
 }
 
+/* Кнопки помощи скрываются без ключа админки — атрибутом hidden из app.ts. */
+.topbar-right [hidden] {
+  display: none !important;
+}
+
 /* Кнопка «?» у заголовка экрана и метка термина — один вид, разные размеры. */
 .help-toggle,
 .help-mark {
@@ -1828,4 +1833,23 @@ body.tutorial-active #toasts {
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* ─── Селектор профиля (мультипрофиль) ──────────────────────────────────── */
+
+.profile-picker {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.profile-picker select {
+  min-width: 130px;
+  max-width: 200px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.profile-picker[hidden] {
+  display: none !important;
 }

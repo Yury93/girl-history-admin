@@ -1,6 +1,8 @@
-import { CharacterApi } from '../../api/engine-api.js';
+import { CharacterApi, CharactersApi } from '../../api/engine-api.js';
 import { errorText } from '../../api/http.js';
+import { emitProfilesChanged, setProfileId } from '../../state/profile.js';
 import { escapeHtml, onClick, query, withBusy } from '../../ui/dom.js';
+import { confirmDialog } from '../../ui/confirm.js';
 import { toast } from '../../ui/toast.js';
 import { formatDateTime } from '../../ui/format.js';
 import {
@@ -42,8 +44,10 @@ export class CharacterComponent extends BaseScreen {
     this.root.innerHTML = `
       ${screenHead(
         'Персонаж',
-        `Версия ${c.version}, обновлён ${escapeHtml(formatDateTime(c.updatedAt))}. Профиль уходит в кешируемый блок промпта.`,
-        '<button class="btn-primary" id="saveCharacter">Сохранить</button>',
+        `Профиль «${escapeHtml(c.name)}» (${escapeHtml(c.key)}), версия ${c.version},
+         обновлён ${escapeHtml(formatDateTime(c.updatedAt))}. Уходит в кешируемый блок промпта.`,
+        `<button class="btn-primary" id="saveCharacter">Сохранить</button>
+         <button class="btn-danger" id="deleteProfile">Удалить профиль</button>`,
         'character'
       )}
       ${card(
@@ -110,6 +114,34 @@ export class CharacterComponent extends BaseScreen {
     this.bound = true;
     onClick(this.root, '#saveCharacter', (btn) => {
       void withBusy(btn as HTMLButtonElement, () => this.save());
+    });
+
+    // Удаление профиля — каскад со ВСЕМ контентом. Ввод имени обязателен: это
+    // необратимо, посты и файлы уходят вместе с профилем. Последний профиль
+    // сервер не удалит (409) — тост покажет причину.
+    onClick(this.root, '#deleteProfile', () => {
+      const c = this.character;
+      if (c === null) return;
+      void (async () => {
+        const ok = await confirmDialog({
+          title: `Удалить профиль «${c.name}»?`,
+          message:
+            'Вместе с профилем каскадом удалятся ВСЕ его справочники, посты, картинки, ' +
+            'реестр и планы. Это необратимо.',
+          danger: true,
+          confirmLabel: 'Удалить профиль навсегда',
+          requirePhrase: c.name,
+        });
+        if (!ok) return;
+        try {
+          await CharactersApi.remove(c.id);
+          toast.success(`Профиль «${c.name}» удалён`);
+          setProfileId(null);
+          emitProfilesChanged();
+        } catch (e: unknown) {
+          toast.error(errorText(e));
+        }
+      })();
     });
   }
 

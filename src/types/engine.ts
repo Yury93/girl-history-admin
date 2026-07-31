@@ -41,6 +41,14 @@ export interface ImportReport {
 
 // ─── Справочники ──────────────────────────────────────────────────────────────
 
+/** Профиль персонажа в списке `/engine/characters`. */
+export interface CharacterBrief {
+  id: number;
+  key: string;
+  name: string;
+  handle: string;
+}
+
 export interface Character {
   id: number;
   key: string;
