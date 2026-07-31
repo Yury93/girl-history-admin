@@ -1,6 +1,6 @@
 import { LocationsApi, ModesApi, PoolsApi, WeekGridApi } from '../../api/engine-api.js';
 import { errorText } from '../../api/http.js';
-import { escapeHtml, onClick, queryAll, withBusy } from '../../ui/dom.js';
+import { escapeHtml, onClick, withBusy } from '../../ui/dom.js';
 import { toast } from '../../ui/toast.js';
 import { BaseScreen, emptyBox, screenHead } from '../../ui/screen.js';
 import {
@@ -129,10 +129,17 @@ export class WeekGridComponent extends BaseScreen {
     });
 
     // Галочка слота гасит строку визуально — сразу видно, что слот не попадёт в день.
-    queryAll<HTMLInputElement>(this.root, '.slot-toggle input').forEach((input) => {
-      input.addEventListener('change', () => {
-        input.closest('.slot-row')?.classList.toggle('slot-off', !input.checked);
-      });
+    //
+    // Подписка ДЕЛЕГИРОВАННАЯ, на контейнер: bind() выполняется один раз, а render()
+    // заменяет innerHTML целиком. Слушатели, навешанные на сами чекбоксы, не пережили бы
+    // первую же перерисовку (переключение режима или сохранение дня), и строки перестали
+    // бы гаснуть — при том что сохранение продолжало бы работать, то есть поломка была бы
+    // молчаливой.
+    this.root.addEventListener('change', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (target.closest('.slot-toggle') === null) return;
+      target.closest('.slot-row')?.classList.toggle('slot-off', !target.checked);
     });
   }
 
