@@ -47,7 +47,7 @@ export class ArcComponent extends BaseScreen {
            ${field('Дата старта', dateInput('startDate', arc.startDate), 'Сдвигает весь сезон целиком.')}
          </div>`
       )}
-      ${card('Эпизоды по неделям', this.episodesTable(arc))}`;
+      ${card('Эпизоды по неделям', this.episodesTable(arc), '', undefined, 'episodes')}`;
     this.bind();
   }
 

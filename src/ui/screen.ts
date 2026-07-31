@@ -119,9 +119,16 @@ export function screenHead(
     </div>${helpKey === undefined ? '' : helpPanel(helpKey)}`;
 }
 
-export function card(title: string, body: string, extraClass = '', helpKey?: GlossaryKey): string {
+export function card(
+  title: string,
+  body: string,
+  extraClass = '',
+  helpKey?: GlossaryKey,
+  tour?: string
+): string {
+  const tourAttr = tour === undefined ? '' : ` data-tour="${escapeHtml(tour)}"`;
   return `
-    <section class="card ${extraClass}">
+    <section class="card ${extraClass}"${tourAttr}>
       <h3>${escapeHtml(title)}${helpKey === undefined ? '' : helpMark(helpKey)}</h3>
       ${body}
     </section>`;

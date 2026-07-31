@@ -67,7 +67,8 @@ export class CharacterComponent extends BaseScreen {
           'По строке на правило. Уходит в системный промпт и в фильтр — это ограничения, а не пожелания.'
         ),
         '',
-        'never'
+        'never',
+        'never-list'
       )}
       ${card(
         'Константы-фишки',

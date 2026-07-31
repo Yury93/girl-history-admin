@@ -44,7 +44,7 @@ export class LocationsComponent extends BaseScreen {
             )
       }
       ${card('Локации', this.locationsTable(withLooks))}
-      ${card('Гардероб', this.looksTable(), '', 'look')}`;
+      ${card('Гардероб', this.looksTable(), '', 'look', 'wardrobe')}`;
     this.bind();
   }
 

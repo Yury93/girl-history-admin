@@ -54,7 +54,7 @@ export class ReferencesComponent extends BaseScreen {
         `${withFile} из ${this.references.length} с файлами. Эталон${helpMark('etalon')}: ${
           etalon === null ? 'не отмечен' : escapeHtml(etalon.key)
         }${etalon?.soulId == null ? '' : ` · SoulId ${escapeHtml(etalon.soulId)}`}`,
-        `<button class="btn-primary" id="makeSoul">Создать SoulId из эталона</button>${helpMark('soulId')}`,
+        `<button class="btn-primary" id="makeSoul" data-tour="soul">Создать SoulId из эталона</button>${helpMark('soulId')}`,
         'references'
       )}
       ${

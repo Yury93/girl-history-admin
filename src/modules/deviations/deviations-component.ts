@@ -44,7 +44,10 @@ export class DeviationsComponent extends BaseScreen {
            <button class="btn-primary" id="genPlan">Сгенерировать план</button>
            <button class="btn-secondary" id="loadPlan">Показать</button>
          </div>
-         ${this.planView()}`
+         ${this.planView()}`,
+        '',
+        undefined,
+        'monthly-plan'
       )}`;
     this.bind();
   }

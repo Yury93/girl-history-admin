@@ -43,7 +43,7 @@ export class FeedComponent extends BaseScreen {
         '',
         'feed'
       )}
-      <div class="filters">
+      <div class="filters" data-tour="feed-filters">
         <input type="date" data-name="from" value="${escapeHtml(this.filters.from)}" />
         <input type="date" data-name="to" value="${escapeHtml(this.filters.to)}" />
         <select data-name="status">

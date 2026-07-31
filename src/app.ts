@@ -15,7 +15,19 @@ import { getAdminKey, setAdminKey } from './state/admin-key.js';
 import { toast } from './ui/toast.js';
 import { openGuide } from './ui/guide.js';
 import { hideTooltip, initTooltips } from './ui/tooltip.js';
-import { GOTO_TAB_EVENT, isTabName, type TabComponent, type TabName } from './types/tab.js';
+import {
+  TUTORIAL_STATE_EVENT,
+  initTutorial,
+  toggleTutorial,
+  tutorialStatus,
+} from './ui/tutorial.js';
+import {
+  GOTO_TAB_EVENT,
+  TAB_CHANGED_EVENT,
+  isTabName,
+  type TabComponent,
+  type TabName,
+} from './types/tab.js';
 
 /**
  * Оболочка админки движка.
@@ -56,8 +68,32 @@ class App {
     this.setupTabs();
     this.setupAdminKey();
     this.setupHelp();
+    this.setupTutorial();
     initTooltips();
+    initTutorial();
     void this.activateTab(this.restoreTab());
+  }
+
+  /** Кнопка «Обучение»: текст отражает состояние курса, событие шлёт движок. */
+  private setupTutorial(): void {
+    const button = document.getElementById('tutorialBtn');
+    if (!(button instanceof HTMLButtonElement)) return;
+
+    const refresh = (): void => {
+      const status = tutorialStatus();
+      button.classList.toggle('tutorial-running', status.active);
+      button.textContent = status.active
+        ? 'Прервать обучение'
+        : status.savedStep !== null && status.savedStep > 0
+          ? `Продолжить обучение (${status.savedStep + 1}/${status.total})`
+          : 'Обучение';
+    };
+
+    button.addEventListener('click', () => {
+      toggleTutorial();
+    });
+    document.addEventListener(TUTORIAL_STATE_EVENT, refresh);
+    refresh();
   }
 
   /** Гид в шапке и переходы на вкладку событием — компоненты не импортируют оболочку. */
@@ -121,6 +157,8 @@ class App {
 
     this.activeTab = name;
     localStorage.setItem(LAST_TAB_KEY, name);
+    // Курс «Обучение» следит за текущей вкладкой по этому событию, а не опросом DOM.
+    document.dispatchEvent(new CustomEvent<TabName>(TAB_CHANGED_EVENT, { detail: name }));
 
     document.querySelectorAll<HTMLElement>('.tab-btn').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.tab === name);

@@ -88,7 +88,10 @@ export class GenerationComponent extends BaseScreen {
            </button>
            <button class="btn-secondary" id="checkReady">Проверить готовность</button>
          </div>
-         ${this.readinessView()}`
+         ${this.readinessView()}`,
+        '',
+        undefined,
+        'run-launch'
       )}
       ${card('Прогоны', this.runsTable(), '', 'run')}
       ${card(

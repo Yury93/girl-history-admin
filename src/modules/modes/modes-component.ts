@@ -44,7 +44,7 @@ export class ModesComponent extends BaseScreen {
         '<button class="btn-secondary" id="addMode">+ Режим</button>',
         'modes'
       )}
-      ${card('Сезонные режимы', this.modesTable(), '', 'mode')}
+      ${card('Сезонные режимы', this.modesTable(), '', 'mode', 'modes-list')}
       ${card(
         'Календарные события',
         `${this.eventsTable()}

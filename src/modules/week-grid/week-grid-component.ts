@@ -64,7 +64,7 @@ export class WeekGridComponent extends BaseScreen {
         'week-grid'
       )}
       ${this.keyHints()}
-      <div class="grid-days">${WEEKDAYS.map((wd) => this.dayCard(wd)).join('')}</div>`;
+      <div class="grid-days" data-tour="week-grid">${WEEKDAYS.map((wd) => this.dayCard(wd)).join('')}</div>`;
     this.bind();
   }
 

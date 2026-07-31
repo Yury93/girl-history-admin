@@ -32,7 +32,7 @@ export class PoolsComponent extends BaseScreen {
         'pools'
       )}
       ${this.alerts.length === 0 ? '' : card('Требуют внимания', this.alertsTable(), 'card-warn')}
-      <div class="pool-list">${this.pools.map((p) => this.poolCard(p)).join('')}</div>`;
+      <div class="pool-list" data-tour="pools">${this.pools.map((p) => this.poolCard(p)).join('')}</div>`;
     this.bind();
   }
 

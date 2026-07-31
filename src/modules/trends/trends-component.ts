@@ -40,7 +40,10 @@ export class TrendsComponent extends BaseScreen {
          <input type="text" data-name="topic" placeholder="Тема тренда" />
          <input type="text" data-name="angle" placeholder="Как отыгрывает Nova" />
          <input type="text" data-name="risk" placeholder="Проверка на риски" />
-         <button class="btn-primary" id="addTrend">Добавить</button>`
+         <button class="btn-primary" id="addTrend">Добавить</button>`,
+        '',
+        undefined,
+        'new-trend'
       )}
       ${card('Брифы', this.trendsTable())}`;
     this.bind();

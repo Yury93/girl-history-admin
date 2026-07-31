@@ -57,7 +57,10 @@ export class SettingsComponent extends BaseScreen {
            <button class="btn-secondary" id="importMissing">Импорт (missing)</button>
            <button class="btn-danger" id="importOverwrite">Переимпорт (overwrite)</button>
          </div>
-         ${this.reportView()}`
+         ${this.reportView()}`,
+        '',
+        undefined,
+        'import'
       )}
       ${card(
         'Правила постинга',

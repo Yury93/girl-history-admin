@@ -45,7 +45,7 @@ export class RegistryComponent extends BaseScreen {
         '',
         'registry'
       )}
-      <div class="filters">
+      <div class="filters" data-tour="registry-filters">
         <select data-name="poolKey">
           <option value="">все пулы</option>
           ${options}

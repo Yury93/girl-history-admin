@@ -1530,3 +1530,302 @@ tr.row-warn td {
     grid-template-columns: 1fr;
   }
 }
+
+/* ─── Обучение ──────────────────────────────────────────────────────────────
+ * Курс-«спутник»: немодальная панель в правом нижнем углу, подсветка целей,
+ * прогресс. Слой 250: выше тостов (200), ниже модалок (300).
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.tutorial-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 250;
+  width: 360px;
+  max-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--primary);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  animation: tutorial-in 0.2s ease-out;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.tutorial-panel.closing {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+@keyframes tutorial-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* Тосты живут в том же углу — при активном курсе уезжают левее панели. */
+#toasts {
+  transition: right 0.2s ease;
+}
+
+body.tutorial-active #toasts {
+  right: 404px;
+}
+
+/* Свёрнутое состояние: только плашка. */
+.tutorial-pill {
+  display: none;
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.tutorial-panel.collapsed {
+  width: auto;
+}
+
+.tutorial-panel.collapsed .tutorial-pill {
+  display: block;
+}
+
+.tutorial-panel.collapsed .tutorial-inner {
+  display: none;
+}
+
+.tutorial-inner {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  overflow-y: auto;
+}
+
+.tutorial-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tutorial-count {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.tutorial-icon-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 6px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+
+.tutorial-icon-btn:hover {
+  color: var(--text);
+  background: var(--card-hover);
+}
+
+.tutorial-progress {
+  height: 3px;
+  background: var(--border-soft);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 8px 0 12px;
+}
+
+.tutorial-progress span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.3s ease;
+}
+
+.tutorial-step h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.tutorial-step p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.tutorial-step.step-fwd {
+  animation: tutorial-step-fwd 0.18s ease-out;
+}
+
+.tutorial-step.step-back {
+  animation: tutorial-step-back 0.18s ease-out;
+}
+
+@keyframes tutorial-step-fwd {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+
+@keyframes tutorial-step-back {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
+.tutorial-practice {
+  border-left: 3px solid var(--success);
+  background: rgb(34 197 94 / 8%);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin: 4px 0 8px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.tutorial-practice b {
+  color: var(--text);
+}
+
+.tutorial-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  border-left: 3px solid var(--warning);
+  background: rgb(245 158 11 / 8%);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin: 4px 0 8px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.tutorial-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+/* Выпускной чеклист: пункты появляются каскадом. */
+.grad-list {
+  list-style: none;
+  margin: 4px 0 8px;
+  padding: 0;
+}
+
+.grad-list li {
+  position: relative;
+  padding: 3px 0 3px 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+  animation: toast-in 0.25s ease-out both;
+}
+
+.grad-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 2px;
+  color: var(--success);
+  font-weight: 700;
+}
+
+.grad-list li:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.grad-list li:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.grad-list li:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.grad-list li:nth-child(4) {
+  animation-delay: 0.2s;
+}
+.grad-list li:nth-child(5) {
+  animation-delay: 0.25s;
+}
+.grad-list li:nth-child(6) {
+  animation-delay: 0.3s;
+}
+.grad-list li:nth-child(7) {
+  animation-delay: 0.35s;
+}
+.grad-list li:nth-child(8) {
+  animation-delay: 0.4s;
+}
+.grad-list li:nth-child(9) {
+  animation-delay: 0.45s;
+}
+.grad-list li:nth-child(10) {
+  animation-delay: 0.5s;
+}
+
+/* Подсветка цели шага: пульс, затем ровное свечение. */
+.tour-highlight {
+  animation: tour-pulse 1.4s ease-out 2;
+  box-shadow:
+    0 0 0 2px var(--primary),
+    0 0 18px rgb(56 189 248 / 30%);
+  border-radius: var(--radius);
+}
+
+@keyframes tour-pulse {
+  50% {
+    box-shadow:
+      0 0 0 5px var(--primary),
+      0 0 28px rgb(56 189 248 / 45%);
+  }
+}
+
+/* Кнопка в шапке во время курса. */
+#tutorialBtn.tutorial-running {
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+@media (max-width: 900px) {
+  .tutorial-panel {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    max-height: 45vh;
+  }
+
+  body.tutorial-active #toasts {
+    right: 20px;
+    bottom: calc(45vh + 24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-panel,
+  .tutorial-step,
+  .tutorial-progress span,
+  .grad-list li,
+  .tour-highlight,
+  #toasts {
+    transition: none !important;
+    animation: none !important;
+  }
+}

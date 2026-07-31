@@ -47,3 +47,9 @@ export const GOTO_TAB_EVENT = 'nova:goto-tab';
 export function gotoTab(tab: TabName): void {
   document.dispatchEvent(new CustomEvent<TabName>(GOTO_TAB_EVENT, { detail: tab }));
 }
+
+/**
+ * Оболочка сообщает о состоявшейся смене вкладки. Слушает курс «Обучение»: пометка
+ * «этот шаг — про другой экран» и подсветка целей обновляются по событию, а не опросом DOM.
+ */
+export const TAB_CHANGED_EVENT = 'nova:tab-changed';
