@@ -1,5 +1,5 @@
 import { PostsApi } from '../../api/engine-api.js';
-import { ApiError, errorText } from '../../api/http.js';
+import { ApiError, creditsExhaustedText, errorText } from '../../api/http.js';
 import { escapeHtml, onClick, withBusy } from '../../ui/dom.js';
 import { toast } from '../../ui/toast.js';
 import { confirmDialog } from '../../ui/confirm.js';
@@ -113,11 +113,7 @@ export class FeedComponent extends BaseScreen {
         <div class="post-side">
           ${
             post.imageUrl === null
-              ? `<div class="ref-thumb"><span class="ref-empty">${
-                  post.imageStatus === null
-                    ? 'картинка не генерировалась'
-                    : escapeHtml(post.imageStatus)
-                }</span></div>`
+              ? `<div class="ref-thumb"><span class="ref-empty">${escapeHtml(imageEmptyText(post))}</span></div>`
               : `<img class="post-image" src="${escapeHtml(post.imageUrl)}" alt="" />`
           }
           <div class="post-actions">
@@ -180,8 +176,15 @@ export class FeedComponent extends BaseScreen {
       const id = Number(btn.dataset.image);
       void withBusy(btn as HTMLButtonElement, async () => {
         try {
-          await PostsApi.generateImage(id);
-          toast.success('Картинка сгенерирована');
+          // Сбой провайдера НЕ приходит ошибкой HTTP: бэкенд глотает его и отдаёт пост
+          // с imageStatus='failed' и причиной в imageError. Успех — только наличие файла.
+          const updated = await PostsApi.generateImage(id);
+          if (updated.imageUrl === null) {
+            const raw = updated.imageError ?? updated.imageStatus ?? 'причина неизвестна';
+            toast.error(creditsExhaustedText(raw) ?? `Картинка не сгенерирована: ${raw}`);
+          } else {
+            toast.success('Картинка сгенерирована');
+          }
           this.invalidate();
           await this.reload();
         } catch (e: unknown) {
@@ -296,6 +299,13 @@ export class FeedComponent extends BaseScreen {
       if (el !== null) el.value = value;
     }
   }
+}
+
+/** Текст на месте отсутствующей картинки: причина сбоя важнее кода статуса. */
+function imageEmptyText(post: Post): string {
+  if (post.imageStatus === null) return 'картинка не генерировалась';
+  if (post.imageError === null) return post.imageStatus;
+  return creditsExhaustedText(post.imageError) ?? `${post.imageStatus}: ${post.imageError}`;
 }
 
 /** Кнопки только для разрешённых сервером переходов — остальные вернули бы 400. */

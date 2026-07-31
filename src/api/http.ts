@@ -81,6 +81,35 @@ function readServerMessage(data: unknown): string | null {
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 }
 
+/**
+ * Сбой генерации из-за исчерпанных кредитов провайдера. Бэкенд свои кредиты не считает и
+ * пробрасывает ошибку провайдера как есть («DeepSeek вернул 402: …» в поле error, тот же
+ * текст в imageError поста и в report прогона) — поэтому распознавание здесь, по тексту.
+ *
+ * Маркер «вернул 402» точный — это формат обёртки бэкенда; остальные — эвристика по словам
+ * биллинга. Голое «402» матчить НЕЛЬЗЯ: room_402 из промптов дало бы ложное срабатывание.
+ */
+export function creditsExhaustedText(raw: string): string | null {
+  const lower = raw.toLowerCase();
+  const isBilling =
+    lower.includes('вернул 402') ||
+    lower.includes('insufficient') ||
+    lower.includes('credit balance') ||
+    lower.includes('payment required') ||
+    lower.includes('billing');
+  if (!isBilling) return null;
+
+  if (lower.includes('higgsfield')) {
+    return 'Недостаточно кредитов для генерации изображения (Higgsfield). Пополните баланс и повторите.';
+  }
+  const provider = lower.includes('deepseek')
+    ? 'DeepSeek'
+    : lower.includes('claude') || lower.includes('anthropic')
+      ? 'Claude'
+      : 'LLM-провайдер';
+  return `Недостаточно кредитов для генерации текста (${provider}). Пополните баланс и повторите.`;
+}
+
 function toApiError(error: unknown): ApiError {
   if (!(error instanceof AxiosError)) return new ApiError('Непредвиденная ошибка', null);
 
@@ -93,6 +122,9 @@ function toApiError(error: unknown): ApiError {
       null
     );
   }
+
+  const credits = serverMessage === null ? null : creditsExhaustedText(serverMessage);
+  if (credits !== null) return new ApiError(credits, status, serverMessage);
 
   switch (status) {
     case 401:

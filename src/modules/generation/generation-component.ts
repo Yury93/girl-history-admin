@@ -1,5 +1,5 @@
 import { GenerationApi } from '../../api/engine-api.js';
-import { errorText } from '../../api/http.js';
+import { creditsExhaustedText, errorText } from '../../api/http.js';
 import { escapeHtml, onClick, withBusy } from '../../ui/dom.js';
 import { toast } from '../../ui/toast.js';
 import { formatDateTime, toDateInputValue } from '../../ui/format.js';
@@ -99,13 +99,19 @@ export class GenerationComponent extends BaseScreen {
     );
   }
 
+  // Сырые сообщения провайдеров («DeepSeek вернул 402: …») переводятся в человеческие:
+  // оператор должен сразу видеть «недостаточно кредитов», а не JSON из недр API.
   private reportText(run: GenerationRun): string {
-    if (run.error !== null) return `<span class="warn-text">${escapeHtml(run.error)}</span>`;
+    if (run.error !== null) {
+      return `<span class="warn-text">${escapeHtml(creditsExhaustedText(run.error) ?? run.error)}</span>`;
+    }
     if (run.report.length === 0) return '—';
     return run.report
-      .map((e) =>
-        escapeHtml(`${e.date}: ${e.reason}${e.detail === undefined ? '' : ` (${e.detail})`}`)
-      )
+      .map((e) => {
+        const detail =
+          e.detail === undefined ? '' : ` (${creditsExhaustedText(e.detail) ?? e.detail})`;
+        return escapeHtml(`${e.date}: ${e.reason}${detail}`);
+      })
       .join('<br>');
   }
 
