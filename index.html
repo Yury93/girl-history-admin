@@ -15,11 +15,14 @@
         <b>Nova</b>
         <span class="brand-sub">движок генерации контента</span>
       </div>
-      <!-- Ключ сервер НЕ выдаёт: при заданном ADMIN_KEY он просто отвечает 401,
-           пока клиент не пришлёт верный. Поэтому поле всегда на виду. -->
-      <div class="admin-key">
-        <input type="password" id="adminKey" placeholder="x-admin-key" autocomplete="off" />
-        <button class="btn-secondary btn-sm" id="saveAdminKey">Сохранить ключ</button>
+      <div class="topbar-right">
+        <button class="btn-secondary btn-sm" id="howItWorks">Как это работает?</button>
+        <!-- Ключ сервер НЕ выдаёт: при заданном ADMIN_KEY он просто отвечает 401,
+             пока клиент не пришлёт верный. Поэтому поле всегда на виду. -->
+        <div class="admin-key">
+          <input type="password" id="adminKey" placeholder="x-admin-key" autocomplete="off" />
+          <button class="btn-secondary btn-sm" id="saveAdminKey">Сохранить ключ</button>
+        </div>
       </div>
     </header>
 

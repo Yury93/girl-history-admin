@@ -2,7 +2,7 @@ import { LocationsApi, ModesApi, PoolsApi, WeekGridApi } from '../../api/engine-
 import { errorText } from '../../api/http.js';
 import { escapeHtml, onClick, withBusy } from '../../ui/dom.js';
 import { toast } from '../../ui/toast.js';
-import { BaseScreen, emptyBox, screenHead } from '../../ui/screen.js';
+import { BaseScreen, emptyBox, helpMark, screenHead } from '../../ui/screen.js';
 import {
   SLOTS,
   SLOT_TITLES,
@@ -58,8 +58,10 @@ export class WeekGridComponent extends BaseScreen {
     this.root.innerHTML = `
       ${screenHead(
         'Сетка недели',
-        'Якорь, локации и пулы каждого слота. Несколько локаций = чередование (как library|beach).',
-        tabs
+        `Якорь${helpMark('anchor')}, локации и пулы${helpMark('pool')} каждого слота.
+         Несколько локаций = чередование (как library|beach).`,
+        tabs,
+        'week-grid'
       )}
       ${this.keyHints()}
       <div class="grid-days">${WEEKDAYS.map((wd) => this.dayCard(wd)).join('')}</div>`;

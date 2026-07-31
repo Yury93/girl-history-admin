@@ -8,6 +8,7 @@ import {
   badge,
   card,
   field,
+  helpMark,
   linesArea,
   readLines,
   screenHead,
@@ -17,8 +18,9 @@ import type { ReferenceImage } from '../../types/engine.js';
 /**
  * Референсы персонажа.
  *
- * До загрузки эталона SoulId не создаётся и картинки не генерируются — но промпты
- * собираются и сохраняются в постах. Эталон ровно один: отметка нового снимает старую.
+ * Без файла эталона SoulId не создаётся. Картинки генерируются и без SoulId — но без
+ * консистентности внешности между кадрами: референс просто не прикладывается к запросу
+ * (`image-job-service.ts` бэкенда). Эталон ровно один: отметка нового снимает старую.
  *
  * SoulId создаётся из ПУБЛИЧНОГО URL картинки, а не из файла. Локально этот адрес извне
  * недоступен, поэтому кнопка осмысленна только на проде.
@@ -49,10 +51,11 @@ export class ReferencesComponent extends BaseScreen {
     this.root.innerHTML = `
       ${screenHead(
         'Референсы',
-        `${withFile} из ${this.references.length} с файлами. Эталон: ${
+        `${withFile} из ${this.references.length} с файлами. Эталон${helpMark('etalon')}: ${
           etalon === null ? 'не отмечен' : escapeHtml(etalon.key)
         }${etalon?.soulId == null ? '' : ` · SoulId ${escapeHtml(etalon.soulId)}`}`,
-        '<button class="btn-primary" id="makeSoul">Создать SoulId из эталона</button>'
+        `<button class="btn-primary" id="makeSoul">Создать SoulId из эталона</button>${helpMark('soulId')}`,
+        'references'
       )}
       ${
         etalon !== null && !etalon.hasFile

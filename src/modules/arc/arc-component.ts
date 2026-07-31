@@ -7,6 +7,7 @@ import {
   card,
   dateInput,
   field,
+  helpMark,
   readValue,
   screenHead,
   table,
@@ -35,8 +36,9 @@ export class ArcComponent extends BaseScreen {
       ${screenHead(
         `Сезон ${arc.season}: ${arc.title}`,
         `${arc.weeks} недель, ${escapeHtml(arc.startDate)} — ${escapeHtml(arc.endDate)}. ` +
-          'Неделя 1 отсчитывается от даты старта.',
-        '<button class="btn-primary" id="saveArc">Сохранить</button>'
+          `Неделя 1 отсчитывается от даты старта${helpMark('arc')}.`,
+        '<button class="btn-primary" id="saveArc">Сохранить</button>',
+        'arc'
       )}
       ${card(
         'Якорь сезона',

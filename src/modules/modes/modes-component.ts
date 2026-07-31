@@ -41,9 +41,10 @@ export class ModesComponent extends BaseScreen {
       ${screenHead(
         'Режимы и календарь',
         'Режим определяет сетку недели и время слотов. Для даты без режима генерация вернёт ошибку.',
-        '<button class="btn-secondary" id="addMode">+ Режим</button>'
+        '<button class="btn-secondary" id="addMode">+ Режим</button>',
+        'modes'
       )}
-      ${card('Сезонные режимы', this.modesTable())}
+      ${card('Сезонные режимы', this.modesTable(), '', 'mode')}
       ${card(
         'Календарные события',
         `${this.eventsTable()}

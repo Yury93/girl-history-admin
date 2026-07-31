@@ -45,7 +45,8 @@ export class SettingsComponent extends BaseScreen {
       ${screenHead(
         'Настройки движка',
         'Правила постинга, сцены, причёски и фильтр «никогда». Ссылки на рубрики и локации проверяются при сохранении.',
-        '<button class="btn-primary" id="saveSettings">Сохранить настройки</button>'
+        '<button class="btn-primary" id="saveSettings">Сохранить настройки</button>',
+        'settings'
       )}
       ${card(
         'Импорт справочников',
@@ -84,7 +85,7 @@ export class SettingsComponent extends BaseScreen {
         )
       )}
       ${card('Параметры изображений', field('', jsonArea('imageDefaults', s.imageDefaults, 8)))}
-      ${card('Рубрики', this.rubricsTable())}
+      ${card('Рубрики', this.rubricsTable(), '', 'rubric')}
       ${card('Шаблоны промптов', this.templatesList())}`;
     this.bind();
   }

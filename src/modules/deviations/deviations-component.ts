@@ -3,7 +3,7 @@ import { errorText } from '../../api/http.js';
 import { escapeHtml, onClick, withBusy } from '../../ui/dom.js';
 import { toast } from '../../ui/toast.js';
 import { toDateInputValue } from '../../ui/format.js';
-import { BaseScreen, badge, card, emptyBox, screenHead, table } from '../../ui/screen.js';
+import { BaseScreen, badge, card, emptyBox, helpMark, screenHead, table } from '../../ui/screen.js';
 import type { Deviation, MonthlyPlan, SocialEvent } from '../../types/engine.js';
 
 /**
@@ -32,10 +32,11 @@ export class DeviationsComponent extends BaseScreen {
       ${screenHead(
         'Отклонения и события',
         'Норма/вариация/эпизод — 70/25/5. Эпизоды не слипаются и не падают на арочные даты.',
-        ''
+        '',
+        'deviations'
       )}
-      ${card('Отклонения', this.deviationsTable())}
-      ${card('Социальные события', this.socialTable())}
+      ${card('Отклонения', this.deviationsTable(), '', 'deviation')}
+      ${card('Социальные события', this.socialTable(), '', 'socialEvent')}
       ${card(
         'План месяца',
         `<div class="inline-form">
@@ -105,7 +106,7 @@ export class DeviationsComponent extends BaseScreen {
           `<tr><td>${escapeHtml(date)}</td><td>${items.map((i) => badge(i)).join(' ')}</td></tr>`
       );
 
-    return `<p class="hint">Зерно <code>${escapeHtml(plan.seed)}</code>, записей ${plan.entries.length}.</p>
+    return `<p class="hint">Зерно${helpMark('seed')} <code>${escapeHtml(plan.seed)}</code>, записей ${plan.entries.length}.</p>
       ${table(['Дата', 'Что запланировано'], rows)}`;
   }
 

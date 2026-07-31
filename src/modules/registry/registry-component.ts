@@ -42,7 +42,8 @@ export class RegistryComponent extends BaseScreen {
       ${screenHead(
         'Реестр вариаций',
         `${this.total} записей. Каждая — «в этот день, в этом слоте, из этого пула выпало это».`,
-        ''
+        '',
+        'registry'
       )}
       <div class="filters">
         <select data-name="poolKey">

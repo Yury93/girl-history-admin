@@ -43,7 +43,8 @@ export class CharacterComponent extends BaseScreen {
       ${screenHead(
         'Персонаж',
         `Версия ${c.version}, обновлён ${escapeHtml(formatDateTime(c.updatedAt))}. Профиль уходит в кешируемый блок промпта.`,
-        '<button class="btn-primary" id="saveCharacter">Сохранить</button>'
+        '<button class="btn-primary" id="saveCharacter">Сохранить</button>',
+        'character'
       )}
       ${card(
         'Профиль',
@@ -64,11 +65,15 @@ export class CharacterComponent extends BaseScreen {
           '',
           linesArea('never', c.never, 10),
           'По строке на правило. Уходит в системный промпт и в фильтр — это ограничения, а не пожелания.'
-        )
+        ),
+        '',
+        'never'
       )}
       ${card(
         'Константы-фишки',
-        field('', linesArea('constants', c.constants, 6), 'По строке на константу.')
+        field('', linesArea('constants', c.constants, 6), 'По строке на константу.'),
+        '',
+        'constant'
       )}
       ${card(
         'Учёба, психология, голос',

@@ -1,6 +1,7 @@
-import { escapeHtml, requireElement } from './dom.js';
+import { escapeHtml, onClick, requireElement } from './dom.js';
 import { errorText } from '../api/http.js';
-import type { TabComponent } from '../types/tab.js';
+import type { TabComponent, TabName } from '../types/tab.js';
+import { SCREEN_HELP, type GlossaryKey } from '../help/help-texts.js';
 
 /**
  * Общий каркас экрана: загрузка → отрисовка → показ ошибки.
@@ -14,6 +15,19 @@ export abstract class BaseScreen implements TabComponent {
 
   constructor(containerId: string) {
     this.root = requireElement(containerId);
+
+    // Панель «Что это за экран»: раскрытие классом на живом узле, НЕ через render() —
+    // полная перерисовка пересоздала бы узел, и транзишн не сыграл бы. Состояние тут же
+    // уходит в localStorage, чтобы следующий render() отрисовал панель как есть.
+    onClick(this.root, '.help-toggle', () => {
+      const panel = this.root.querySelector<HTMLElement>('[data-help-panel]');
+      if (panel === null) return;
+      const open = panel.classList.toggle('open');
+      localStorage.setItem(
+        HELP_STATE_PREFIX + (panel.dataset.helpPanel ?? ''),
+        open ? 'open' : 'closed'
+      );
+    });
   }
 
   /** Загрузка данных экрана. Вызывается при первом открытии и при явном обновлении. */
@@ -48,22 +62,67 @@ export abstract class BaseScreen implements TabComponent {
   }
 }
 
-/** Заголовок экрана с кнопками справа. */
-export function screenHead(title: string, subtitle: string, actions = ''): string {
+const HELP_STATE_PREFIX = 'nova-admin:help:';
+
+/** Панель раскрыта, пока оператор её не закрыл: отсутствие записи — первый визит. */
+function helpPanelOpen(tab: TabName): boolean {
+  return localStorage.getItem(HELP_STATE_PREFIX + tab) !== 'closed';
+}
+
+function helpPanel(tab: TabName): string {
+  const help = SCREEN_HELP[tab];
+  const list = (items: string[]): string =>
+    items.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
   return `
-    <div class="screen-head">
-      <div>
-        <h2>${escapeHtml(title)}</h2>
-        <p class="hint">${subtitle}</p>
+    <div class="help-panel ${helpPanelOpen(tab) ? 'open' : ''}" data-help-panel="${tab}">
+      <div class="help-panel-clip">
+        <div class="help-panel-body">
+          <p>${escapeHtml(help.what)}</p>
+          <p><b>Когда сюда заходить.</b> ${escapeHtml(help.when)}</p>
+          ${help.links.length === 0 ? '' : `<b>Как связано с остальным</b><ul>${list(help.links)}</ul>`}
+          ${help.pitfalls.length === 0 ? '' : `<b>Грабли</b><ul>${list(help.pitfalls)}</ul>`}
+        </div>
       </div>
-      <div class="screen-actions">${actions}</div>
     </div>`;
 }
 
-export function card(title: string, body: string, extraClass = ''): string {
+/**
+ * Точечная подсказка у термина. Показ — общий тултип (`ui/tooltip.ts`); ключ
+ * типизирован глоссарием, так что несуществующая подсказка не соберётся.
+ */
+export function helpMark(key: GlossaryKey): string {
+  return `<span class="help-mark" tabindex="0" data-help="${key}" aria-label="Что это значит">?</span>`;
+}
+
+/**
+ * Заголовок экрана с кнопками справа. `helpKey` добавляет кнопку «?» и панель
+ * «Что это за экран» — поведение у всех экранов одинаковое, компонент лишь передаёт ключ.
+ */
+export function screenHead(
+  title: string,
+  subtitle: string,
+  actions = '',
+  helpKey?: TabName
+): string {
+  const toggle =
+    helpKey === undefined
+      ? ''
+      : `<button type="button" class="help-toggle" aria-label="Что это за экран"
+           title="Что это за экран">?</button>`;
+  return `
+    <div class="screen-head">
+      <div>
+        <h2>${escapeHtml(title)}${toggle}</h2>
+        <p class="hint">${subtitle}</p>
+      </div>
+      <div class="screen-actions">${actions}</div>
+    </div>${helpKey === undefined ? '' : helpPanel(helpKey)}`;
+}
+
+export function card(title: string, body: string, extraClass = '', helpKey?: GlossaryKey): string {
   return `
     <section class="card ${extraClass}">
-      <h3>${escapeHtml(title)}</h3>
+      <h3>${escapeHtml(title)}${helpKey === undefined ? '' : helpMark(helpKey)}</h3>
       ${body}
     </section>`;
 }

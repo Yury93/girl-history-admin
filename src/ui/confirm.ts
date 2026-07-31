@@ -1,4 +1,5 @@
 import { escapeHtml } from './dom.js';
+import { animateModalClose } from './modal.js';
 
 /**
  * Модалка подтверждения вместо `confirm()`.
@@ -58,8 +59,9 @@ export function confirmDialog(options: ConfirmOptions): Promise<boolean> {
 
     const close = (result: boolean): void => {
       document.removeEventListener('keydown', onKey);
-      backdrop.remove();
-      resolve(result);
+      animateModalClose(backdrop, () => {
+        resolve(result);
+      });
     };
 
     // Escape отменяет, Enter подтверждает — но только когда фраза уже введена.

@@ -30,7 +30,8 @@ export class LocationsComponent extends BaseScreen {
       ${screenHead(
         'Локации и гардероб',
         `${this.locations.length} локаций, ${this.looks.length} луков.`,
-        ''
+        '',
+        'locations'
       )}
       ${
         orphans.length === 0
@@ -43,7 +44,7 @@ export class LocationsComponent extends BaseScreen {
             )
       }
       ${card('Локации', this.locationsTable(withLooks))}
-      ${card('Гардероб', this.looksTable())}`;
+      ${card('Гардероб', this.looksTable(), '', 'look')}`;
     this.bind();
   }
 

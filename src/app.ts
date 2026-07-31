@@ -13,7 +13,9 @@ import { TrendsComponent } from './modules/trends/trends-component.js';
 import { SettingsComponent } from './modules/settings/settings-component.js';
 import { getAdminKey, setAdminKey } from './state/admin-key.js';
 import { toast } from './ui/toast.js';
-import type { TabComponent } from './types/tab.js';
+import { openGuide } from './ui/guide.js';
+import { hideTooltip, initTooltips } from './ui/tooltip.js';
+import { GOTO_TAB_EVENT, isTabName, type TabComponent, type TabName } from './types/tab.js';
 
 /**
  * Оболочка админки движка.
@@ -27,29 +29,7 @@ import type { TabComponent } from './types/tab.js';
  * статуса прогона пережил бы переключение вкладки и копился бы при каждом возврате.
  */
 
-const TAB_NAMES = [
-  'character',
-  'modes',
-  'week-grid',
-  'pools',
-  'deviations',
-  'locations',
-  'references',
-  'arc',
-  'generation',
-  'feed',
-  'registry',
-  'trends',
-  'settings',
-] as const;
-
-export type TabName = (typeof TAB_NAMES)[number];
-
 const LAST_TAB_KEY = 'nova-admin:last-tab';
-
-function isTabName(value: string): value is TabName {
-  return (TAB_NAMES as readonly string[]).includes(value);
-}
 
 class App {
   private readonly components = new Map<TabName, TabComponent>();
@@ -75,7 +55,21 @@ class App {
 
     this.setupTabs();
     this.setupAdminKey();
+    this.setupHelp();
+    initTooltips();
     void this.activateTab(this.restoreTab());
+  }
+
+  /** Гид в шапке и переходы на вкладку событием — компоненты не импортируют оболочку. */
+  private setupHelp(): void {
+    document.getElementById('howItWorks')?.addEventListener('click', () => {
+      openGuide();
+    });
+    document.addEventListener(GOTO_TAB_EVENT, (event) => {
+      if (!(event instanceof CustomEvent)) return;
+      const detail: unknown = event.detail;
+      if (typeof detail === 'string' && isTabName(detail)) void this.activateTab(detail);
+    });
   }
 
   private restoreTab(): TabName {
@@ -122,6 +116,8 @@ class App {
     if (this.activeTab !== null) {
       this.components.get(this.activeTab)?.deactivate?.();
     }
+    // Якорь тултипа остаётся в уходящем экране — сам тултип не должен.
+    hideTooltip();
 
     this.activeTab = name;
     localStorage.setItem(LAST_TAB_KEY, name);

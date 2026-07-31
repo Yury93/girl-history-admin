@@ -2,7 +2,7 @@ import { PoolsApi } from '../../api/engine-api.js';
 import { errorText } from '../../api/http.js';
 import { escapeHtml, onClick, withBusy } from '../../ui/dom.js';
 import { toast } from '../../ui/toast.js';
-import { BaseScreen, badge, card, screenHead, table } from '../../ui/screen.js';
+import { BaseScreen, badge, card, helpMark, screenHead, table } from '../../ui/screen.js';
 import type { Pool, PoolAlert } from '../../types/engine.js';
 
 /**
@@ -26,9 +26,10 @@ export class PoolsComponent extends BaseScreen {
     this.root.innerHTML = `
       ${screenHead(
         'Пулы вариаций',
-        `${this.pools.length} пулов, ${this.pools.reduce((s, p) => s + p.items.length, 0)} позиций. ` +
-          'Ключ позиции стабилен — на него ссылается реестр.',
-        ''
+        `${this.pools.length} пулов${helpMark('pool')}, ${this.pools.reduce((s, p) => s + p.items.length, 0)} позиций. ` +
+          `Ключ позиции стабилен — на него ссылается реестр${helpMark('registry')}.`,
+        '',
+        'pools'
       )}
       ${this.alerts.length === 0 ? '' : card('Требуют внимания', this.alertsTable(), 'card-warn')}
       <div class="pool-list">${this.pools.map((p) => this.poolCard(p)).join('')}</div>`;

@@ -3,7 +3,7 @@ import { ApiError, creditsExhaustedText, errorText } from '../../api/http.js';
 import { escapeHtml, onClick, withBusy } from '../../ui/dom.js';
 import { toast } from '../../ui/toast.js';
 import { confirmDialog } from '../../ui/confirm.js';
-import { BaseScreen, badge, emptyBox, screenHead } from '../../ui/screen.js';
+import { BaseScreen, badge, emptyBox, helpMark, screenHead } from '../../ui/screen.js';
 import type { Post } from '../../types/engine.js';
 
 const PAGE = 40;
@@ -37,7 +37,12 @@ export class FeedComponent extends BaseScreen {
 
   protected render(): void {
     this.root.innerHTML = `
-      ${screenHead('Лента постов', `Найдено ${this.total}. Автопубликации нет — статус меняет человек.`, '')}
+      ${screenHead(
+        'Лента постов',
+        `Найдено ${this.total}. Автопубликации нет — статус меняет человек.`,
+        '',
+        'feed'
+      )}
       <div class="filters">
         <input type="date" data-name="from" value="${escapeHtml(this.filters.from)}" />
         <input type="date" data-name="to" value="${escapeHtml(this.filters.to)}" />
@@ -60,6 +65,7 @@ export class FeedComponent extends BaseScreen {
           <option value="tiktok">tiktok</option>
           <option value="telegram">telegram</option>
         </select>
+        ${helpMark('kind')}
         <button class="btn-secondary" id="applyFilters">Показать</button>
       </div>
       ${this.posts.length === 0 ? emptyBox('Постов нет') : this.posts.map((p) => this.postCard(p)).join('')}`;
