@@ -1,7 +1,8 @@
 import { GenerationApi, ModesApi, ReferencesApi, WeekGridApi } from '../../api/engine-api.js';
-import { creditsExhaustedText, errorText } from '../../api/http.js';
+import { creditsExhaustedText, errorText, imageFailureText } from '../../api/http.js';
 import { escapeHtml, onClick, withBusy } from '../../ui/dom.js';
 import { toast } from '../../ui/toast.js';
+import { failPopup } from '../../ui/fail-popup.js';
 import { formatDateTime, toDateInputValue } from '../../ui/format.js';
 import {
   BaseScreen,
@@ -38,6 +39,8 @@ interface ReadinessItem {
  */
 export class GenerationComponent extends BaseScreen {
   private runs: GenerationRun[] = [];
+  /** Статусы прогонов на момент прошлого наблюдения — для попапа о завершении. */
+  private lastStatuses = new Map<number, string>();
   private plan: DayPlan | null = null;
   private readiness: ReadinessItem[] | null = null;
   private timer: number | null = null;
@@ -53,6 +56,10 @@ export class GenerationComponent extends BaseScreen {
 
   protected async load(): Promise<void> {
     this.runs = await GenerationApi.runs(20);
+    // Здесь попап не покажется (карта статусов пуста), и это правильно: исторические
+    // прогоны не должны всплывать при открытии вкладки. Вызов нужен, чтобы ЗАСЕЯТЬ
+    // статусы — иначе прогон, завершившийся в первые две секунды, был бы пропущен.
+    this.noticeFinishedRuns();
   }
 
   deactivate(): void {
@@ -250,9 +257,9 @@ export class GenerationComponent extends BaseScreen {
     if (run.report.length === 0) return '—';
     return run.report
       .map((e) => {
-        const detail =
-          e.detail === undefined ? '' : ` (${creditsExhaustedText(e.detail) ?? e.detail})`;
-        return escapeHtml(`${e.date}: ${e.reason}${detail}`);
+        const label = e.reason === 'image_failed' ? 'картинка не сгенерирована' : e.reason;
+        const detail = e.detail === undefined ? '' : ` (${imageFailureText(e.detail)})`;
+        return escapeHtml(`${e.date}: ${label}${detail}`);
       })
       .join('<br>');
   }
@@ -378,6 +385,30 @@ export class GenerationComponent extends BaseScreen {
     this.timer = null;
   }
 
+  /**
+   * Попап о сбоях картинок — ровно один на прогон, в момент перехода активный →
+   * терминальный. Без карты статусов поллинг показывал бы его каждые две секунды, а при
+   * первом открытии вкладки — сразу на все исторические прогоны.
+   */
+  private noticeFinishedRuns(): void {
+    const previous = this.lastStatuses;
+    this.lastStatuses = new Map(this.runs.map((r) => [r.id, r.status]));
+
+    for (const run of this.runs) {
+      const before = previous.get(run.id);
+      if (before !== 'pending' && before !== 'running') continue;
+      if (run.status === 'pending' || run.status === 'running') continue;
+
+      const failures = run.report.filter((e) => e.reason === 'image_failed');
+      if (failures.length === 0) continue;
+
+      failPopup({
+        title: `Прогон #${run.id}: картинка не сгенерирована`,
+        reason: failures.map((f) => `${f.date}: ${imageFailureText(f.detail ?? '')}`).join('\n'),
+      });
+    }
+  }
+
   private async refreshRuns(): Promise<void> {
     try {
       this.runs = await GenerationApi.runs(20);
@@ -385,6 +416,7 @@ export class GenerationComponent extends BaseScreen {
       // Сетевой сбой на поллинге не должен ломать экран — следующая итерация повторит.
       return;
     }
+    this.noticeFinishedRuns();
     const active = this.runs.some((r) => r.status === 'pending' || r.status === 'running');
     if (!active) this.stopPolling();
     this.render();

@@ -1,7 +1,8 @@
 import { PostsApi } from '../../api/engine-api.js';
-import { ApiError, creditsExhaustedText, errorText } from '../../api/http.js';
+import { ApiError, errorText, imageFailureText } from '../../api/http.js';
 import { escapeHtml, onClick, withBusy } from '../../ui/dom.js';
 import { toast } from '../../ui/toast.js';
+import { failPopup } from '../../ui/fail-popup.js';
 import { confirmDialog } from '../../ui/confirm.js';
 import { BaseScreen, badge, emptyBox, helpMark, screenHead } from '../../ui/screen.js';
 import type { Post } from '../../types/engine.js';
@@ -119,7 +120,7 @@ export class FeedComponent extends BaseScreen {
         <div class="post-side">
           ${
             post.imageUrl === null
-              ? `<div class="ref-thumb"><span class="ref-empty">${escapeHtml(imageEmptyText(post))}</span></div>`
+              ? imageMissingBlock(post)
               : `<img class="post-image" src="${escapeHtml(post.imageUrl)}" alt="" />`
           }
           <div class="post-actions">
@@ -181,20 +182,26 @@ export class FeedComponent extends BaseScreen {
     onClick(this.root, '[data-image]', (btn) => {
       const id = Number(btn.dataset.image);
       void withBusy(btn as HTMLButtonElement, async () => {
+        // При сбое бэкенд делает повторные попытки с паузами — ответа можно ждать до
+        // минуты. Без этой строки экран выглядит зависшим.
+        toast.info('Генерирую картинку. При сбое будут повторные попытки — это до минуты.');
         try {
-          // Сбой провайдера НЕ приходит ошибкой HTTP: бэкенд глотает его и отдаёт пост
-          // с imageStatus='failed' и причиной в imageError. Успех — только наличие файла.
+          // Сбой провайдера НЕ приходит ошибкой HTTP: бэкенд отдаёт пост со статусом
+          // failed и причиной в imageError. Успех — только completed с файлом.
           const updated = await PostsApi.generateImage(id);
-          if (updated.imageUrl === null) {
-            const raw = updated.imageError ?? updated.imageStatus ?? 'причина неизвестна';
-            toast.error(creditsExhaustedText(raw) ?? `Картинка не сгенерирована: ${raw}`);
-          } else {
+          if (updated.imageStatus === 'completed' && updated.imageUrl !== null) {
             toast.success('Картинка сгенерирована');
+          } else {
+            failPopup({
+              title: 'Картинка не сгенерирована',
+              reason: imageFailureText(updated.imageError ?? updated.imageStatus ?? ''),
+              attempts: updated.imageAttempts,
+            });
           }
           this.invalidate();
           await this.reload();
         } catch (e: unknown) {
-          toast.error(errorText(e));
+          failPopup({ title: 'Картинка не сгенерирована', reason: errorText(e) });
         }
       });
     });
@@ -307,11 +314,31 @@ export class FeedComponent extends BaseScreen {
   }
 }
 
-/** Текст на месте отсутствующей картинки: причина сбоя важнее кода статуса. */
-function imageEmptyText(post: Post): string {
-  if (post.imageStatus === null) return 'картинка не генерировалась';
-  if (post.imageError === null) return post.imageStatus;
-  return creditsExhaustedText(post.imageError) ?? `${post.imageStatus}: ${post.imageError}`;
+/**
+ * Место картинки, когда её нет. Три разных случая, и путать их нельзя: «не бывает по
+ * построению» (картинка только у main), «не запускали» и «пробовали, не вышло» —
+ * последний обязан показать причину, иначе оператор видит пустоту и считает это поломкой.
+ */
+function imageMissingBlock(post: Post): string {
+  if (post.imageStatus === null) {
+    const text =
+      post.imagePrompt === null ? 'у этого поста картинки не бывает' : 'картинка не генерировалась';
+    return `<div class="ref-thumb"><span class="ref-empty">${escapeHtml(text)}</span></div>`;
+  }
+
+  const attempts =
+    post.imageAttempts !== null && post.imageAttempts > 1
+      ? `<div class="post-image-attempts">Попыток: ${escapeHtml(String(post.imageAttempts))}</div>`
+      : '';
+
+  return `
+    <div class="post-image-failed">
+      <div class="post-image-failed-title">Не удалось сгенерировать картинку</div>
+      <div class="post-image-failed-reason">${escapeHtml(
+        imageFailureText(post.imageError ?? post.imageStatus)
+      )}</div>
+      ${attempts}
+    </div>`;
 }
 
 /** Кнопки только для разрешённых сервером переходов — остальные вернули бы 400. */

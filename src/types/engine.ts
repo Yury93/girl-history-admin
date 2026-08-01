@@ -413,6 +413,8 @@ export interface Post {
   imageUrl: string | null;
   imageStatus: string | null;
   imageError: string | null;
+  /** Сколько заходов сделал генератор. Больше одного — были повторы после сбоя. */
+  imageAttempts: number | null;
   status: string;
   moderatorNote: string | null;
   isEdited: boolean;

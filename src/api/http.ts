@@ -114,6 +114,43 @@ export function creditsExhaustedText(raw: string): string | null {
   return `Недостаточно кредитов для генерации текста (${provider}). Пополните баланс и повторите.`;
 }
 
+/**
+ * Причина сбоя картинки — в человеческий текст. Сырьё: `imageError`/`imageStatus` поста
+ * или `detail` из отчёта прогона. Маркеры взяты из измеренных ответов Higgsfield
+ * (girl-history/images-pipeline_research.md §2.2).
+ *
+ * Сравнение по вхождению, а не по равенству: строка приходит и голым сентинелом, и внутри
+ * обёртки бэкенда («Higgsfield вернул 400: …»).
+ */
+export function imageFailureText(raw: string): string {
+  const text = raw.trim();
+  if (text === '') return 'Провайдер не сообщил причину.';
+
+  const credits = creditsExhaustedText(text);
+  if (credits !== null) return credits;
+
+  const lower = text.toLowerCase();
+  if (lower.includes('higgsfield_rate_limit')) {
+    return 'Провайдер ограничивает частоту запросов. Подождите минуту и повторите.';
+  }
+  if (lower.includes('character_not_found')) {
+    return (
+      'Эталон (SoulId) ещё не готов у провайдера — он дообучает референс. ' +
+      'Подождите пару минут после создания SoulId и повторите.'
+    );
+  }
+  if (lower.includes('nsfw')) {
+    return 'Провайдер отклонил кадр NSFW-фильтром. Поправьте промпт изображения.';
+  }
+  if (lower.includes('таймаут')) {
+    return (
+      'Провайдер не ответил за отведённое время. Задание могло остаться у него в работе — ' +
+      'проверьте позже или повторите.'
+    );
+  }
+  return text;
+}
+
 function toApiError(error: unknown): ApiError {
   if (!(error instanceof AxiosError)) return new ApiError('Непредвиденная ошибка', null);
 
