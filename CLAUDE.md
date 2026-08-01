@@ -89,9 +89,15 @@
 `default.bak-girl-history-admin`. Соседи проверены после reload и не пострадали: `/` → Lisa AI 200,
 `/girl-history/docs/` → 200.
 
-Выкат сделан **вручную по SSH**, не через GitHub Actions: секреты Environment `production`
-(`SSH_HOST` / `SSH_USERNAME` / `SSH_PASSWORD`) **до сих пор не заведены**, поэтому `deploy-admin.yml`
-падает на preflight — это задумано. Автодеплой заработает, как только секреты появятся.
+Тот первый выкат был сделан **вручную по SSH**: секреты Environment `production`
+(`SSH_HOST` / `SSH_USERNAME` / `SSH_PASSWORD`) тогда не были заведены, и `deploy-admin.yml` падал
+на preflight.
+
+**2026-08-01: автодеплой РАБОТАЕТ — ИЗМЕРЕНО.** Пуш в `master` выкатил админку сам, вручную ничего
+не делалось: через ~3 минуты после пуша прод отдавал ровно те хеши ассетов, что дала локальная
+сборка (`index-CKSt2r1F.js`, `index-CGnOXY1o.css`), и в них уже был новый код (`fail-popup` в JS,
+`.post-image-failed` и `busy-pulse` в CSS). Значит секреты заведены. Правило прежнее: **не пушить
+в `master` черновики** — пуш и есть деплой.
 
 **Проверено по сети 2026-07-30:** оболочка отдаётся с правильным `<title>` и префиксом
 `/girl-history-admin/assets/…`; JS/CSS — 200 с верными content-type; SPA-фолбэк на произвольном пути
