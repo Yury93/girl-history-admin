@@ -416,6 +416,18 @@ export const PostsApi = {
   async remove(id: number): Promise<void> {
     await client.delete(`/engine/posts/${id}`);
   },
+  /**
+   * Удаление ленты по ТЕКУЩЕМУ отбору: без фильтров — вся лента профиля.
+   * `confirm` обязателен на стороне сервера, без него он отвечает 400.
+   */
+  async removeScope(
+    params: Record<string, string | number>
+  ): Promise<{ deleted: number; published: number }> {
+    const { data } = await client.delete<{ deleted: number; published: number }>('/engine/posts', {
+      params: { ...params, confirm: 'true' },
+    });
+    return data;
+  },
   async promptRuns(postId: number): Promise<PromptRun[]> {
     const { data } = await client.get<PromptRun[]>('/engine/prompt-runs', { params: { postId } });
     return data;

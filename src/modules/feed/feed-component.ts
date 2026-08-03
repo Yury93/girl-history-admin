@@ -68,10 +68,24 @@ export class FeedComponent extends BaseScreen {
         </select>
         ${helpMark('kind')}
         <button class="btn-secondary" id="applyFilters">Показать</button>
+        ${
+          this.total === 0
+            ? ''
+            : `<button class="btn-danger" id="clearFeed">${
+                this.hasFilters()
+                  ? `Удалить найденное (${this.total})`
+                  : `Удалить всю ленту (${this.total})`
+              }</button>`
+        }
       </div>
       ${this.posts.length === 0 ? emptyBox('Постов нет') : this.posts.map((p) => this.postCard(p)).join('')}`;
     this.bind();
     this.applyFilterValues();
+  }
+
+  /** Есть ли активный отбор — от этого зависит и надпись на кнопке, и текст подтверждения. */
+  private hasFilters(): boolean {
+    return Object.values(this.filters).some((v) => v !== '');
   }
 
   private postCard(post: Post): string {
@@ -152,6 +166,48 @@ export class FeedComponent extends BaseScreen {
         this.invalidate();
         await this.reload();
       });
+    });
+
+    // Удаление ленты. Необратимо и массово, поэтому подтверждение — с вводом фразы,
+    // как у удаления профиля: одной кнопки «ОК» для такого мало.
+    onClick(this.root, '#clearFeed', (btn) => {
+      void (async () => {
+        const scoped = this.hasFilters();
+        const ok = await confirmDialog({
+          title: scoped ? 'Удалить найденные посты?' : 'Удалить всю ленту?',
+          message:
+            `Будет удалено постов: ${this.total}` +
+            (scoped
+              ? ' — ровно то, что сейчас показано фильтром.'
+              : ' — вся лента этого профиля.') +
+            ' Действие необратимо.\n\n' +
+            'Планы дней и реестр вариаций НЕ удаляются: реестр — вход генератора, и без ' +
+            'него перегенерация пошла бы по второму кругу теми же вариантами. Файлы ' +
+            'картинок тоже останутся на диске.',
+          danger: true,
+          confirmLabel: 'Удалить',
+          requirePhrase: 'удалить',
+        });
+        if (!ok) return;
+        void withBusy(btn as HTMLButtonElement, async () => {
+          try {
+            const params: Record<string, string | number> = {};
+            for (const [key, value] of Object.entries(this.filters)) {
+              if (value !== '') params[key] = value;
+            }
+            const result = await PostsApi.removeScope(params);
+            toast.success(
+              `Удалено постов: ${result.deleted}` +
+                (result.published > 0 ? `, из них опубликованных: ${result.published}` : '')
+            );
+            this.openId = null;
+            this.invalidate();
+            await this.reload();
+          } catch (e: unknown) {
+            toast.error(errorText(e));
+          }
+        });
+      })();
     });
 
     onClick(this.root, '[data-open]', (el) => {
