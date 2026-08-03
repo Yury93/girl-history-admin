@@ -2,6 +2,7 @@ import { CharacterComponent } from './modules/character/character-component.js';
 import { ModesComponent } from './modules/modes/modes-component.js';
 import { WeekGridComponent } from './modules/week-grid/week-grid-component.js';
 import { PoolsComponent } from './modules/pools/pools-component.js';
+import { ActionsComponent } from './modules/actions/actions-component.js';
 import { DeviationsComponent } from './modules/deviations/deviations-component.js';
 import { LocationsComponent } from './modules/locations/locations-component.js';
 import { ReferencesComponent } from './modules/references/references-component.js';
@@ -59,6 +60,7 @@ class App {
       modes: () => new ModesComponent('tab-modes'),
       'week-grid': () => new WeekGridComponent('tab-week-grid'),
       pools: () => new PoolsComponent('tab-pools'),
+      actions: () => new ActionsComponent('tab-actions'),
       deviations: () => new DeviationsComponent('tab-deviations'),
       locations: () => new LocationsComponent('tab-locations'),
       references: () => new ReferencesComponent('tab-references'),

@@ -451,3 +451,22 @@ export interface Paged<T> {
   items: T[];
   total: number;
 }
+
+/** Действие в кадре (ТЗ v1.1 §2). Зеркало ActionDTO бэкенда — синхронизация ручная. */
+export interface EngineAction {
+  key: string;
+  locationKey: string;
+  titleRu: string;
+  actionEn: string;
+  prop: string;
+  framing: string;
+  postAngleRu: string;
+  tags: string[];
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export type EngineActionInput = Omit<EngineAction, 'isActive' | 'sortOrder'> & {
+  isActive?: boolean;
+  sortOrder?: number;
+};

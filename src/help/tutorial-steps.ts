@@ -32,6 +32,7 @@ export const TAB_TITLES: Record<TabName, string> = {
   modes: 'Режимы',
   'week-grid': 'Сетка недели',
   pools: 'Пулы',
+  actions: 'Действия',
   deviations: 'Отклонения',
   locations: 'Локации',
   references: 'Референсы',

@@ -1,5 +1,7 @@
 import client from './http.js';
 import type {
+  EngineAction,
+  EngineActionInput,
   Arc,
   CalendarEvent,
   Character,
@@ -435,5 +437,29 @@ export const TrendsApi = {
   },
   async remove(id: number): Promise<void> {
     await client.delete(`/engine/trends/${id}`);
+  },
+};
+
+/** Действия в кадре (ТЗ v1.1 §2). Заголовки профиля и ключа ставит интерцептор. */
+export const ActionsApi = {
+  async list(location?: string): Promise<EngineAction[]> {
+    const { data } = await client.get<EngineAction[]>('/engine/actions', {
+      params: location === undefined ? {} : { location },
+    });
+    return data;
+  },
+  async create(input: EngineActionInput): Promise<EngineAction> {
+    const { data } = await client.post<EngineAction>('/engine/actions', input);
+    return data;
+  },
+  async update(key: string, input: Partial<EngineActionInput>): Promise<EngineAction> {
+    const { data } = await client.put<EngineAction>(
+      `/engine/actions/${encodeURIComponent(key)}`,
+      input
+    );
+    return data;
+  },
+  async remove(key: string): Promise<void> {
+    await client.delete(`/engine/actions/${encodeURIComponent(key)}`);
   },
 };

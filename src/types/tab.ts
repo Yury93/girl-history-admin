@@ -21,6 +21,7 @@ export const TAB_NAMES = [
   'modes',
   'week-grid',
   'pools',
+  'actions',
   'deviations',
   'locations',
   'references',
