@@ -1,4 +1,4 @@
-import { ReferencesApi } from '../../api/engine-api.js';
+import { LocationsApi, ReferencesApi } from '../../api/engine-api.js';
 import { errorText } from '../../api/http.js';
 import { escapeHtml, onClick, withBusy } from '../../ui/dom.js';
 import { toast } from '../../ui/toast.js';
@@ -13,7 +13,7 @@ import {
   readLines,
   screenHead,
 } from '../../ui/screen.js';
-import type { ReferenceImage } from '../../types/engine.js';
+import type { EngineLocation, ReferenceImage } from '../../types/engine.js';
 
 /**
  * Референсы персонажа.
@@ -28,12 +28,16 @@ import type { ReferenceImage } from '../../types/engine.js';
 export class ReferencesComponent extends BaseScreen {
   private references: ReferenceImage[] = [];
   private rules: string[] = [];
+  private locations: EngineLocation[] = [];
+  /** Фильтр «только без файла»: 43 записи и 1 файл — глазами такое не найти. */
+  private onlyMissing = false;
   private bound = false;
 
   protected async load(): Promise<void> {
-    [this.references, this.rules] = await Promise.all([
+    [this.references, this.rules, this.locations] = await Promise.all([
       ReferencesApi.list(),
       ReferencesApi.rules(),
+      LocationsApi.list(),
     ]);
   }
 
@@ -41,8 +45,9 @@ export class ReferencesComponent extends BaseScreen {
     const etalon = this.references.find((r) => r.isEtalon) ?? null;
     const withFile = this.references.filter((r) => r.hasFile).length;
 
+    const shown = this.onlyMissing ? this.references.filter((r) => !r.hasFile) : this.references;
     const byCategory = new Map<string, ReferenceImage[]>();
-    for (const ref of this.references) {
+    for (const ref of shown) {
       const list = byCategory.get(ref.category) ?? [];
       list.push(ref);
       byCategory.set(ref.category, list);
@@ -54,7 +59,9 @@ export class ReferencesComponent extends BaseScreen {
         `${withFile} из ${this.references.length} с файлами. Эталон${helpMark('etalon')}: ${
           etalon === null ? 'не отмечен' : escapeHtml(etalon.key)
         }${etalon?.soulId == null ? '' : ` · SoulId ${escapeHtml(etalon.soulId)}`}`,
-        `<button class="btn-primary" id="makeSoul" data-tour="soul">Создать SoulId из эталона</button>${helpMark('soulId')}`,
+        `<label class="checkbox"><input type="checkbox" id="onlyMissing"
+           ${this.onlyMissing ? 'checked' : ''} /> только без файла</label>
+         <button class="btn-primary" id="makeSoul" data-tour="soul">Создать SoulId из эталона</button>${helpMark('soulId')}`,
         'references'
       )}
       ${
@@ -67,6 +74,18 @@ export class ReferencesComponent extends BaseScreen {
             )
           : ''
       }
+      ${card(
+        'Загрузить новый референс',
+        `<p class="hint">Ключ — из ТЗ «Референсы локаций» §8 (например, <code>loc-street-day</code>).
+           Запись с опознаваемым префиксом (loc-*, selfie-*, …) создаётся сама при загрузке;
+           привязка к локации — на вкладке «Локации».</p>
+         <div class="field-row">
+           <input type="text" id="newRefKey" placeholder="loc-cafe-lo-01" />
+           <label class="btn-secondary file-btn">
+             Выбрать файл и загрузить<input type="file" accept="image/*" id="newRefFile" hidden />
+           </label>
+         </div>`
+      )}
       ${[...byCategory.entries()]
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([cat, refs]) => card(cat, this.grid(refs)))
@@ -77,6 +96,11 @@ export class ReferencesComponent extends BaseScreen {
          <button class="btn-primary" id="saveRefRules">Сохранить</button>`
       )}`;
     this.bind();
+  }
+
+  /** Локации, ссылающиеся на референс, — чтобы видеть, куда уедет загруженный файл. */
+  private usedBy(refKey: string): string[] {
+    return this.locations.filter((l) => l.refKeys.includes(refKey)).map((l) => l.key);
   }
 
   private grid(refs: ReferenceImage[]): string {
@@ -94,6 +118,9 @@ export class ReferencesComponent extends BaseScreen {
           <div class="ref-key">${escapeHtml(r.key)}</div>
           <div class="ref-meta">
             ${r.isEtalon ? badge('эталон', 'ok') : ''}
+            ${this.usedBy(r.key)
+              .map((k) => badge(`→ ${k}`))
+              .join(' ')}
             ${r.bytes === null ? '' : `<span class="small">${escapeHtml(formatBytes(r.bytes))}</span>`}
           </div>
           <div class="ref-actions">
@@ -124,6 +151,36 @@ export class ReferencesComponent extends BaseScreen {
     this.root.addEventListener('change', (event) => {
       const target = event.target;
       if (!(target instanceof HTMLInputElement)) return;
+
+      if (target.id === 'onlyMissing') {
+        this.onlyMissing = target.checked;
+        this.render();
+        return;
+      }
+
+      // Новый ключ: запись с опознаваемым префиксом автосоздаётся на бэкенде.
+      if (target.id === 'newRefFile') {
+        const key = this.root.querySelector<HTMLInputElement>('#newRefKey')?.value.trim() ?? '';
+        const file = target.files?.[0];
+        if (file === undefined) return;
+        if (key === '') {
+          toast.error('Сначала укажите ключ референса (например, loc-street-day)');
+          target.value = '';
+          return;
+        }
+        void (async () => {
+          try {
+            await ReferencesApi.upload(key, file);
+            toast.success(`Референс «${key}» загружен`);
+            this.invalidate();
+            await this.reload();
+          } catch (e: unknown) {
+            toast.error(errorText(e));
+          }
+        })();
+        return;
+      }
+
       const key = target.dataset.upload;
       const file = target.files?.[0];
       if (key === undefined || file === undefined) return;

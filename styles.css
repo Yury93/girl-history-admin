@@ -2001,3 +2001,44 @@ body.tutorial-active #toasts {
 .profile-picker[hidden] {
   display: none !important;
 }
+
+/* ─── Референсы локаций (ТЗ «Референсы локаций») ────────────────────────── */
+
+.field-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.field-row input[type='text'] {
+  min-width: 220px;
+}
+
+.ref-editor-row td {
+  background: color-mix(in srgb, var(--accent, #7c6cf0) 6%, transparent);
+}
+
+.ref-pick-group {
+  margin: 6px 0;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.ref-pick-group b {
+  min-width: 110px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.ref-pick-group .checkbox {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+td textarea[data-loc-scene] {
+  min-width: 240px;
+  font-size: 12px;
+}

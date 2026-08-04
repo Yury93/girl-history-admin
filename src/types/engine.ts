@@ -202,6 +202,8 @@ export interface EngineLocation {
   key: string;
   title: string;
   titleEn: string;
+  /** Английское описание сцены для промпта (ТЗ «Референсы локаций» §6); null — нет. */
+  sceneEn: string | null;
   type: string;
   season: string | null;
   content: string | null;
